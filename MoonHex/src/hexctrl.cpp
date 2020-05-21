@@ -1,5 +1,7 @@
 #include "hexctrl.hpp"
 
+//using namespace Moon::Hacking;
+
 wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(parent, id)
 {
 	SetFont(wxFontInfo(10).FaceName("Courier New"));
@@ -9,7 +11,10 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	m_UpdateSel.Start(600);	
 	m_UpdateSel.Bind(wxEVT_TIMER, &wxHexCtrl::OnSelectionTimer, this);
 	Bind(wxEVT_PAINT, &wxHexCtrl::OnPaintEvent, this);
-	Bind(wxEVT_LEFT_DOWN, &wxHexCtrl::OnLeftDown, this);		
+	Bind(wxEVT_LEFT_DOWN, &wxHexCtrl::OnLeftDown, this);
+
+	m_Table.NewTable();
+	TestTable();
 }
 
 void wxHexCtrl::OpenFile(const wxString& path)
@@ -36,11 +41,32 @@ void wxHexCtrl::OpenFile(const wxString& path)
 
 		Refresh();
 	}
+}
 
-	else
+void wxHexCtrl::TestTable()
+{	
+	//Bad displaying chars
+	for (unsigned char i = 0; i < 0x20; ++i)
 	{
-		wxFAIL_MSG_AT("Could not open the file.", "hexctrl.cpp", 42, "wxHexCtrl::OpenFile");
+		m_Table.ReplaceAll(i, ' ');
 	}
+
+	m_Table.ReplaceAll(0x7f, ' ');
+	m_Table.ReplaceAll(0x81, ' ');
+	m_Table.ReplaceAll(0x8d, ' ');
+	m_Table.ReplaceAll(0x8f, ' ');
+	m_Table.ReplaceAll(0x90, ' ');
+	m_Table.ReplaceAll(0x9c, ' ');
+	m_Table.ReplaceAll(0x9f, ' ');
+	m_Table.ReplaceAll(0xa0, ' ');
+	m_Table.ReplaceAll(0xaf, ' ');
+}
+
+void wxHexCtrl::OpenTable(const wxString& path)
+{
+	m_Table.Open(path.ToStdString());
+	TestTable();
+	Refresh();
 }
 
 void wxHexCtrl::CalculateMinSize()
@@ -52,7 +78,7 @@ void wxHexCtrl::CalculateMinSize()
 
 	if (rows % m_Col != 0)
 		++rows;
-
+	
 	m_LeftMargin = 10;
 	m_CharsLeftMargin = m_LeftMargin + (m_Col * 3) + 1;
 
@@ -215,17 +241,11 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 		}
 
 		std::string lineText((const char*)m_Data + offset, lineSize);
-		size_t pos = lineText.find_first_of(m_LineBreak);		
-
-		while (pos != std::string::npos)
-		{
-			lineText[pos] = ' ';
-			pos = lineText.find_first_of(m_LineBreak, pos + 1);
-		}
+		m_Table.Input(lineText);
 		
 		offset += m_Col;
 
-		dc.DrawText(lineText, currentPoint);
+		dc.DrawText(lineText, currentPoint);		
 		currentPoint.y += charHeight;
 	}
 }

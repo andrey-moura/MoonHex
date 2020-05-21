@@ -6,6 +6,8 @@
 #include <wx/filename.h>
 #include <wx/timer.h>
 
+#include <moon/table.hpp>
+
 #include "class_bit_converter.hpp"
 
 #ifdef _DEBUG
@@ -36,6 +38,7 @@ public:
 	~wxHexCtrl() = default;
 public:
 	void OpenFile(const wxString& path);
+	void OpenTable(const wxString& path);
 	void SetOffset(size_t offset);
 	void UpdateSelection();
 	size_t GetOffset();
@@ -44,9 +47,11 @@ private:
 	wxFile m_File;
 	uint8_t* m_Data = nullptr;
 	size_t m_Col = 16;	
-	Selection m_Selection;
-	const char* m_LineBreak = "\r\n\x01";
-	wxTimer m_UpdateSel;
+	Selection m_Selection;	
+	wxTimer m_UpdateSel;	
+
+	Moon::Hacking::Table m_Table;	
+	void TestTable();
 private:
 	wxSize m_CharSize;
 	wxRect m_LineSize;

@@ -6,12 +6,15 @@
 MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, "MoonHex")
 {	
 	CreateGUIControls();
+
+	Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnClose, this);
 }
 
 void MainFrame::CreateGUIControls()
 {
 	wxMenu* menuFile = new wxMenu();
 	menuFile->Append(wxID_OPEN, "Open");
+	menuFile->Append(13000, "Open Table");
 	menuFile->Append(wxID_CLOSE, "Close");
 
 	wxMenu* menuNavigation = new wxMenu();
@@ -34,6 +37,14 @@ void MainFrame::OnOpenFile()
 
 	if (dialog.ShowModal() != wxID_CANCEL)
 		OpenFile(dialog.GetPath());
+}
+
+void MainFrame::OnOpenTable()
+{
+	wxFileDialog dialog(nullptr, "Select a table file");
+
+	if (dialog.ShowModal() != wxID_CANCEL)
+		m_HexView->OpenTable(dialog.GetPath());
 }
 
 void MainFrame::OpenFile(const wxString& path)
@@ -71,8 +82,10 @@ void MainFrame::OnMenuClick(wxCommandEvent& event)
 	case wxID_OPEN:
 		OnOpenFile();
 		break;
+	case 13000:
+		OnOpenTable();
+		break;
 	case wxID_CLOSE:
-
 		break;
 	case wxID_INDEX:
 		OnGoOffset();
@@ -106,6 +119,13 @@ void MainFrame::OnFileWatcher(wxFileSystemWatcherEvent& event)
 			}
 		}
 	}	
+
+	event.Skip();
+}
+
+void MainFrame::OnClose(wxCloseEvent& event)
+{
+	m_FileWatcher.Unbind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);
 
 	event.Skip();
 }

@@ -23,17 +23,18 @@ private:
     //In future, the wxHexCtrl will not have access to files...
     wxFile m_File;
     //Why the wxFile have no option to get the path...?
-    wxFileName m_FileName;
-
+    wxFileName m_FileName;    
     void OnGoOffset();
 private:
     void CreateGUIControls();
 //Events handlers
     void OnOpenFile();
+    void OnOpenTable();
 public:
-    void OpenFile(const wxString& path);
+    void OpenFile(const wxString& path);    
 //Events
 private:
+    void OnClose(wxCloseEvent& event);
     void OnMenuClick(wxCommandEvent& event);
     void OnFileWatcher(wxFileSystemWatcherEvent& event);
 };
