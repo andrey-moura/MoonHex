@@ -8,6 +8,7 @@ MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, "MoonHex")
 	CreateGUIControls();
 
 	Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnClose, this);
+	m_FileWatcher.Bind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);
 }
 
 void MainFrame::CreateGUIControls()
@@ -28,7 +29,8 @@ void MainFrame::CreateGUIControls()
 
 	m_HexView = new wxHexCtrl(this, wxID_ANY);
 
-	m_FileWatcher.Bind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);
+	wxBoxSizer* rootSizer = new wxBoxSizer(wxVERTICAL);
+	rootSizer->Add(m_HexView, 1, wxEXPAND, 0);	
 }
 
 void MainFrame::OnOpenFile()

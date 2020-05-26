@@ -16,19 +16,13 @@
 #define SEPARATOR_COLOR 200,200,200
 #endif
 
-struct Selection
+//Because of wxCaret...
+struct HexCaret
 {
-	wxPosition pos;
+	wxRect rect;
 	size_t offset;
-	bool selected;
 	bool drawed;
-	bool left;
-	bool changed;
-
-	Selection() : pos(0, 0), offset(0), selected(false), drawed(false), left(false), changed(false)
-	{
-
-	}
+	bool left;	
 };
 
 class wxHexCtrl : public wxHVScrolledWindow
@@ -40,14 +34,15 @@ public:
 	void OpenFile(const wxString& path);
 	void OpenTable(const wxString& path);
 	void SetOffset(size_t offset);
-	void UpdateSelection();
+	//void UpdateSelection();
 	size_t GetOffset();
 	size_t GetFileSize() { return m_File.Length(); }
 private:
 	wxFile m_File;
 	uint8_t* m_Data = nullptr;
 	size_t m_Col = 16;	
-	Selection m_Selection;	
+	//Selection m_Selection;	
+	HexCaret m_Caret;
 	wxTimer m_UpdateSel;	
 
 	Moon::Hacking::Table m_Table;	
@@ -71,10 +66,12 @@ private:
 	void DrawBytePage(wxDC& dc);
 	void DrawCharPage(wxDC& dc);
 	void DrawOffsets(wxDC& dc);	
-	void DrawSelection(wxDC& dc);
+	//void DrawSelection(wxDC& dc);
 //Events
 private:
 	void OnPaintEvent(wxPaintEvent& event);
-	void OnLeftDown(wxMouseEvent& event);		
+	void OnLeftDown(wxMouseEvent& event);
+	void OnMouseMove(wxMouseEvent& event);
 	void OnSelectionTimer(wxTimerEvent& event);
+	void OnResize(wxSizeEvent& event);
 };

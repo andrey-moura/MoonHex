@@ -9,9 +9,12 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	CalculateMinSize();
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 	m_UpdateSel.Start(600);	
+
 	m_UpdateSel.Bind(wxEVT_TIMER, &wxHexCtrl::OnSelectionTimer, this);
 	Bind(wxEVT_PAINT, &wxHexCtrl::OnPaintEvent, this);
 	Bind(wxEVT_LEFT_DOWN, &wxHexCtrl::OnLeftDown, this);
+	Bind(wxEVT_SIZE, &wxHexCtrl::OnResize, this);
+	Bind(wxEVT_MOTION, &wxHexCtrl::OnMouseMove, this);
 
 	m_Table.NewTable();
 	TestTable();
@@ -35,9 +38,7 @@ void wxHexCtrl::OpenFile(const wxString& path)
 
 		CalculateMinSize();
 
-		ScrollToRow(0);
-		m_Selection = Selection();
-		m_Selection.selected = true;
+		ScrollToRow(0);		
 
 		Refresh();
 	}
@@ -51,15 +52,15 @@ void wxHexCtrl::TestTable()
 		m_Table.ReplaceAll(i, ' ');
 	}
 
-	m_Table.ReplaceAll(0x7f, ' ');
-	m_Table.ReplaceAll(0x81, ' ');
-	m_Table.ReplaceAll(0x8d, ' ');
-	m_Table.ReplaceAll(0x8f, ' ');
-	m_Table.ReplaceAll(0x90, ' ');
-	m_Table.ReplaceAll(0x9c, ' ');
-	m_Table.ReplaceAll(0x9f, ' ');
-	m_Table.ReplaceAll(0xa0, ' ');
-	m_Table.ReplaceAll(0xaf, ' ');
+	m_Table.ReplaceAll(0x7f,' ');
+	m_Table.ReplaceAll(0x81,' ');
+	m_Table.ReplaceAll(0x8d,' ');
+	m_Table.ReplaceAll(0x8f,' ');
+	m_Table.ReplaceAll(0x90,' ');
+	m_Table.ReplaceAll(0x9c,' ');
+	m_Table.ReplaceAll(0x9f,' ');
+	m_Table.ReplaceAll(0xa0,' ');
+	m_Table.ReplaceAll(0xaf,' ');
 }
 
 void wxHexCtrl::OpenTable(const wxString& path)
@@ -250,41 +251,6 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	}
 }
 
-void wxHexCtrl::DrawSelection(wxDC& dc)
-{
-	wxPen pen = dc.GetPen();
-	wxBrush brush = dc.GetBrush();	
-
-	size_t start = m_Selection.left ? m_LeftMargin : (m_CharsLeftMargin + 1);
-	wxRect target(wxPoint((m_Selection.pos.GetCol() + start) * m_CharSize.GetWidth(), m_Selection.pos.GetRow() * m_CharSize.GetHeight()), m_CharSize);
-
-	wxColour penColour;
-	wxColour textColour;	
-
-	if (!m_Selection.drawed)
-	{
-		penColour = wxColour(0, 0, 255);		
-		textColour = wxColour(255, 255, 0);		
-	}
-	else
-	{
-		penColour = GetBackgroundColour();
-		textColour = wxColour(0, 0, 0);
-	}
-
-	pen.SetColour(penColour);
-	brush.SetColour(penColour);
-
-	dc.SetTextForeground(textColour);
-	dc.SetPen(pen);
-	dc.SetBrush(brush);
-
-	dc.DrawRectangle(target);
-	dc.DrawText(std::string(1, (char)m_Data[m_Selection.offset]), target.GetPosition());
-
-	m_Selection.drawed = !m_Selection.drawed;
-}
-
 void wxHexCtrl::OnPaintEvent(wxPaintEvent& event)
 {
 	wxBufferedPaintDC dc(this);
@@ -292,45 +258,46 @@ void wxHexCtrl::OnPaintEvent(wxPaintEvent& event)
 	OnDraw(dc);
 }
 
+void wxHexCtrl::OnMouseMove(wxMouseEvent& event)
+{
+	wxPoint point = event.GetPosition();	
+
+	if (event.GetButton() == wxMOUSE_BTN_NONE)
+	{
+		if (point.x < (m_LeftMargin * m_CharSize.GetWidth()))
+		{		
+			SetCursor(wxCURSOR_RIGHT_ARROW);
+		}	
+		else
+		{
+			SetCursor(wxCURSOR_ARROW);
+		}
+	}
+
+	event.Skip();
+}
+
 void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 {		
-	wxPoint pos = event.GetPosition();
+	wxPoint point = event.GetPosition();
 
-	size_t x = pos.x / m_CharSize.GetWidth();
-
-	bool clickedLeft = false;	
-
-	if (x > m_LeftMargin && x < (m_CharsLeftMargin - 1))
-	{
-		clickedLeft = true;
-	}
-	else if (x > m_CharsLeftMargin && x <= (m_CharsLeftMargin + m_Col))
-	{
-		clickedLeft = false;
-	}
-	else
-	{
-		event.Skip();
-		return;
+	if (point.x > (m_CharsLeftMargin + 1) * m_CharSize.GetWidth())
+	{		
+		if (point.x < ((m_Col * 3) * m_CharSize.GetWidth()))
+		{
+			std::string();
+		}
 	}
 
-	wxPosition posStart = GetVisibleBegin();
+	event.Skip();
+}
 
-	size_t row = (pos.y / m_CharSize.GetHeight()) + posStart.GetRow();
-	size_t col = x - (clickedLeft ? m_LeftMargin : m_CharsLeftMargin) -1;	
+void wxHexCtrl::OnResize(wxSizeEvent& event)
+{
+	ScrollToColumn(0);
+	ScrollToRow(0);
 
-	if (clickedLeft)
-		col /= 3;
-
-	size_t offset = (row * m_Col) + col;	
-
-	m_Selection.offset = offset;
-	m_Selection.pos.SetCol(col);
-	m_Selection.pos.SetRow(row);
-	m_Selection.left = clickedLeft;
-	m_Selection.selected = true;
-	m_Selection.changed = true;
-	UpdateSelection();
+	event.Skip();
 }
 
 wxCoord wxHexCtrl::OnGetRowHeight(size_t row) const
@@ -343,26 +310,9 @@ wxCoord wxHexCtrl::OnGetColumnWidth(size_t col) const
 	return wxCoord(m_CharSize.GetWidth());
 }
 
-void wxHexCtrl::UpdateSelection()
-{
-	if (m_Selection.selected)
-	{
-		wxClientDC dc(this);
-		PrepareDC(dc);
-
-		if (m_Selection.changed)
-		{
-			m_Selection.drawed = true;
-			m_Selection.changed = false;
-		}
-
-		DrawSelection(dc);
-	}
-}
-
 void wxHexCtrl::OnSelectionTimer(wxTimerEvent& event)
 {
-	UpdateSelection();
+	//UpdateSelection();
 	m_UpdateSel.Start(-1);
 	event.Skip();
 }
