@@ -1,5 +1,3 @@
 
-.vs/
-Debug/
-Release/
-Release DLL/
+build/
+.vscode/
