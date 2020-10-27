@@ -1,7 +1,5 @@
 #include "hexctrl.hpp"
 
-//using namespace Moon::Hacking;
-
 wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(parent, id)
 {
 	SetFont(wxFontInfo(10).FaceName("Courier New"));
@@ -15,9 +13,6 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	Bind(wxEVT_LEFT_DOWN, &wxHexCtrl::OnLeftDown, this);
 	Bind(wxEVT_SIZE, &wxHexCtrl::OnResize, this);
 	Bind(wxEVT_MOTION, &wxHexCtrl::OnMouseMove, this);
-
-	m_Table.NewTable();
-	TestTable();
 }
 
 void wxHexCtrl::OpenFile(const wxString& path)
@@ -44,29 +39,9 @@ void wxHexCtrl::OpenFile(const wxString& path)
 	}
 }
 
-void wxHexCtrl::TestTable()
-{	
-	//Bad displaying chars
-	for (unsigned char i = 0; i < 0x20; ++i)
-	{
-		m_Table.ReplaceAll(i, ' ');
-	}
-
-	m_Table.ReplaceAll(0x7f,' ');
-	m_Table.ReplaceAll(0x81,' ');
-	m_Table.ReplaceAll(0x8d,' ');
-	m_Table.ReplaceAll(0x8f,' ');
-	m_Table.ReplaceAll(0x90,' ');
-	m_Table.ReplaceAll(0x9c,' ');
-	m_Table.ReplaceAll(0x9f,' ');
-	m_Table.ReplaceAll(0xa0,' ');
-	m_Table.ReplaceAll(0xaf,' ');
-}
-
 void wxHexCtrl::OpenTable(const wxString& path)
 {
-	m_Table.Open(path.ToStdString());
-	TestTable();
+	m_Table.Open(path.ToStdString());	
 	Refresh();
 }
 
@@ -224,23 +199,33 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	wxPosition posEnd = GetVisibleEnd();
 
 	size_t fileSize = m_File.Length();
-	size_t offset = posStart.GetRow() * m_Col;
-	size_t lineSize = m_Col;
+	size_t offset = posStart.GetRow() * m_Col;	
 
 	size_t charHeight = m_CharSize.GetHeight();
 	wxPoint currentPoint((m_CharsLeftMargin * m_CharSize.GetWidth())+ m_CharSize.GetWidth(), m_CharSize.GetHeight() * posStart.GetRow());
 
+	std::string lineText;
+	lineText.reserve(m_Col);
+
 	for (size_t line = posStart.GetRow(); line < posEnd.GetRow(); ++line)
 	{
+		size_t lineSize = m_Col;
+
 		if ((offset + lineSize) > fileSize)
 		{
-			while ((offset + lineSize) > fileSize)
-			{
-				--lineSize;
-			}
+			lineSize = fileSize-offset;
 		}
 
-		std::string lineText((const char*)m_Data + offset, lineSize);
+		lineText.clear();
+		
+		for(size_t i = 0; i < lineSize; ++i)
+		{
+			char c  = *((const char*)m_Data + offset + i);
+
+			if(	isprint(c) )
+				lineText.push_back(c);
+		}
+		
 		m_Table.Input(lineText);
 		
 		offset += m_Col;

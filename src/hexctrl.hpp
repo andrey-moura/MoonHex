@@ -45,7 +45,6 @@ private:
 	wxTimer m_UpdateSel;	
 
 	Moon::Hacking::Table m_Table;	
-	void TestTable();
 private:
 	wxSize m_CharSize;
 	wxRect m_LineSize;
