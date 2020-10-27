@@ -103,7 +103,7 @@ void wxHexCtrl::DrawOffsets(wxDC& dc)
 	dc.SetTextForeground(wxColour(0, 0, 191, 255));
 
 	size_t lineStart = GetVisibleRowsBegin();
-	size_t offset = lineStart * m_Col;
+	uint32_t offset = lineStart * m_Col;
 	size_t lineEnd = GetVisibleRowsEnd();	
 
 	wxPoint curPos(m_CharSize.GetWidth(), 0);
@@ -115,7 +115,7 @@ void wxHexCtrl::DrawOffsets(wxDC& dc)
 
 	for (size_t line = lineStart; line < lineEnd; ++line)
 	{
-		std::string offsetText = BitConverter::ToHexString(offset);
+		std::string offsetText = Moon::BitConverter::ToHexString(offset);
 		offset += m_Col;
 
 		dc.DrawText(offsetText, charWidth, charHeight * line);
@@ -197,9 +197,8 @@ void wxHexCtrl::DrawBytePage(wxDC& dc)
 		{			
 			for (size_t col = 0; col < m_Col; ++col)
 			{
-				char* byteText = BitConverter::ToHexString(m_Data[offset]);
-				line.push_back(byteText[0]);
-				line.push_back(byteText[1]);
+				std::string byteText = Moon::BitConverter::ToHexString(m_Data[offset]);
+				line.append(byteText);
 				line.push_back(' ');
 
 				offset++;

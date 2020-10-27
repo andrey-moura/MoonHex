@@ -8,8 +8,6 @@
 
 #include "hexctrl.hpp"
 #include "dialog_offset.hpp"
-
-#include "class_bit_converter.hpp"
  
 class MainFrame : public wxFrame
 {

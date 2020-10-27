@@ -1,0 +1,27 @@
+#Require a minimum version
+cmake_minimum_required(VERSION 3.10)
+
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+set (CMAKE_CXX_STANDARD 17)
+
+#Set project name
+project(MoonHex)
+
+#wxWidgets
+find_package(wxWidgets REQUIRED COMPONENTS net core base xml)
+include(${wxWidgets_USE_FILE})
+
+include_directories(include)
+
+SET(SRC
+	#SRC HERE
+)
+
+SET(HDR
+	#HDR HERE
+)
+
+#Add the executable
+add_executable(MoonHex ${SRC} ${HDR})
+
+target_link_libraries(MoonHex ${wxWidgets_LIBRARIES})

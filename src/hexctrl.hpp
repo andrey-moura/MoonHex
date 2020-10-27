@@ -7,8 +7,7 @@
 #include <wx/timer.h>
 
 #include <moon/table.hpp>
-
-#include "class_bit_converter.hpp"
+#include <moon/bit_conv.hpp>
 
 #ifdef _DEBUG
 #define SEPARATOR_COLOR 197,0,0
