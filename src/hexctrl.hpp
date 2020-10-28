@@ -18,10 +18,10 @@
 //Because of wxCaret...
 struct HexCaret
 {
-	wxRect rect;
-	size_t offset;
+	wxRect rect;	
+	size_t offset;	
 	bool drawed;
-	bool left;	
+	bool left;
 };
 
 class wxHexCtrl : public wxHVScrolledWindow
@@ -40,17 +40,19 @@ private:
 	wxFile m_File;
 	uint8_t* m_Data = nullptr;
 	size_t m_Col = 16;	
-	//Selection m_Selection;	
 	HexCaret m_Caret;
 	wxTimer m_UpdateSel;	
+//Sub windows stuff
+private:	
+	wxRect m_OffsetWindowRect;	
+	wxRect m_ByteWindowRect;
+	wxRect m_CharWindowRect;
+//Caret	
+private:	
 
 	Moon::Hacking::Table m_Table;	
 private:
 	wxSize m_CharSize;
-	wxRect m_LineSize;
-private:	
-	size_t m_LeftMargin;
-	size_t m_CharsLeftMargin;
 //Overrides
 private:
 	virtual wxCoord OnGetRowHeight(size_t row) const;
@@ -59,8 +61,8 @@ private:
 private:	
 	void CalculateMinSize();
 	void OnDraw(wxDC& dc);
-	void DrawLines(wxDC& dc);
-	void DrawSeparator(wxDC& dc);
+	void DrawLines(wxDC& dc);	
+	void DrawSeparator(wxDC& dc, wxPoint start, wxPoint end);
 	void DrawBytePage(wxDC& dc);
 	void DrawCharPage(wxDC& dc);
 	void DrawOffsets(wxDC& dc);	

@@ -31,6 +31,8 @@ void MainFrame::CreateGUIControls()
 
 	wxBoxSizer* rootSizer = new wxBoxSizer(wxVERTICAL);
 	rootSizer->Add(m_HexView, 1, wxEXPAND, 0);	
+
+	SetSizer(rootSizer);	
 }
 
 void MainFrame::OnOpenFile()
