@@ -13,6 +13,7 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	Bind(wxEVT_LEFT_DOWN, &wxHexCtrl::OnLeftDown, this);
 	Bind(wxEVT_SIZE, &wxHexCtrl::OnResize, this);
 	Bind(wxEVT_MOTION, &wxHexCtrl::OnMouseMove, this);
+	Bind(wxEVT_KEY_DOWN, &wxHexCtrl::OnKeyDown, this);
 }
 
 void wxHexCtrl::OpenFile(const wxString& path)
@@ -38,11 +39,7 @@ void wxHexCtrl::OpenFile(const wxString& path)
 		Refresh();
 	}
 
-	m_Caret.drawed = false;
-	m_Caret.left = true;
-	m_Caret.offset = 0;
-	m_Caret.rect.x = 0;
-	m_Caret.rect.y = 0;
+	ResetCaret();
 }
 
 void wxHexCtrl::OpenTable(const wxString& path)
@@ -61,7 +58,7 @@ void wxHexCtrl::CalculateMinSize()
 	if (rows % m_Col != 0)
 		++rows;
 
-	m_CharSize = GetTextExtent("A");	
+	m_CharSize = GetTextExtent("A");		
 
 	m_OffsetWindowRect.width = m_CharSize.GetWidth()*10 /* 8 character + one margin left and right*/;
 	m_OffsetWindowRect.height = GetSize().GetHeight();
@@ -88,6 +85,25 @@ void wxHexCtrl::CalculateMinSize()
  {
 	 return m_Col * GetVisibleRowsBegin();
  }
+
+void wxHexCtrl::UpdateCaretPosition()
+{
+	if(m_HexCaret.left)
+	{				
+		m_HexCaret.rect.SetPosition(m_ByteWindowRect.GetPosition());
+		m_HexCaret.rect.SetSize(wxSize(m_CharSize.GetWidth()*2, m_CharSize.GetHeight()));
+	} else 
+	{
+		m_HexCaret.rect.SetPosition(m_CharWindowRect.GetPosition());
+		m_HexCaret.rect.SetSize(m_CharSize);
+	}
+	
+	m_HexCaret.rect.x += m_CharSize.GetWidth();
+
+	m_HexCaret.rect.x += (m_HexCaret.offset % m_Col)  * (m_CharSize.GetWidth() * (m_HexCaret.left ? 3 : 1));
+	m_HexCaret.rect.y += ((m_HexCaret.offset / m_Col)) * m_CharSize.GetHeight();
+}
+
 
 void wxHexCtrl::DrawOffsets(wxDC& dc)
 {	
@@ -126,6 +142,7 @@ void wxHexCtrl::OnDraw(wxDC& dc)
 	DrawLines(dc);	
 	DrawBytePage(dc);
 	DrawCharPage(dc);
+	DrawCursor(dc);
 }
 
 void wxHexCtrl::DrawLines(wxDC& dc)
@@ -257,6 +274,12 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	DrawSeparator(dc, m_CharWindowRect.GetRightTop(), m_CharWindowRect.GetRightBottom());
 }
 
+void wxHexCtrl::DrawCursor(wxDC& dc)
+{
+	dc.SetBrush(wxBrush(m_HexCaret.background, wxBRUSHSTYLE_SOLID));
+	dc.DrawRectangle(m_HexCaret.rect);
+}
+
 void wxHexCtrl::OnPaintEvent(wxPaintEvent& event)
 {
 	wxBufferedPaintDC dc(this);
@@ -308,6 +331,34 @@ void wxHexCtrl::OnResize(wxSizeEvent& event)
 	ScrollToRow(0);
 
 	event.Skip();
+}
+
+void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
+{
+	if(event.GetKeyCode() == wxKeyCode::WXK_LEFT)
+	{
+		if(m_HexCaret.offset > 0)
+			m_HexCaret.offset--;
+	} else if(event.GetKeyCode() == wxKeyCode::WXK_RIGHT)
+	{
+		if(m_HexCaret.offset < m_File.Length()-1)
+			m_HexCaret.offset++;
+	} else if(event.GetKeyCode() == wxKeyCode::WXK_UP)
+	{
+		if(m_HexCaret.offset >= m_Col)
+			m_HexCaret.offset-=m_Col;
+	}
+	else if(event.GetKeyCode() == wxKeyCode::WXK_DOWN)
+	{
+		if((m_HexCaret.offset+m_Col) < m_File.Length()-1)
+			m_HexCaret.offset+=m_Col;
+	} else if(event.GetKeyCode() == wxKeyCode::WXK_TAB)
+	{
+		m_HexCaret.left = !m_HexCaret.left;
+	}
+
+	UpdateCaretPosition();
+	Refresh();	
 }
 
 wxCoord wxHexCtrl::OnGetRowHeight(size_t row) const
