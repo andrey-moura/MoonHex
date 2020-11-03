@@ -1,8 +1,9 @@
 #include "dialog_offset.hpp"
+#include <moon/bit_conv.hpp>
+
+#include <wx/msgdlg.h>
 
 wxArrayString OffsetDialog::s_LastIndexes;
-std::string OffsetDialog::s_Numbers = "0123456789";
-std::string OffsetDialog::s_Hex = "0123456789ABCDEF";
 
 OffsetDialog::OffsetDialog(size_t currentPos, size_t fileSize) : wxDialog(nullptr, wxID_ANY, "Go To Offset"), m_CurPos(currentPos), m_FileSize(fileSize)
 {
@@ -11,50 +12,22 @@ OffsetDialog::OffsetDialog(size_t currentPos, size_t fileSize) : wxDialog(nullpt
 
 void OffsetDialog::OnButtonClick(wxCommandEvent& event)
 {
-	int id = event.GetId();
-
-	if (id == wxID_OK)
+	if (event.GetId() == wxID_OK)
 	{
 		std::string s = m_PositionInput->GetValue().ToStdString();
-		size_t offset = 0;
 
-		if (s[0] == '0' && s[1] == 'x')
+		if(!Moon::BitConverter::IsHexString(s))		
 		{
-			if (s.find_first_not_of(s_Hex, 2) == std::string::npos)
-			{
-				std::string toConvert = s.substr(2);
-				offset = std::stoi(toConvert, nullptr, 16);
-			}
-		}
-		else if (s.find_first_not_of(s_Numbers, 2) != std::string::npos)
-		{
-			std::string toConvert = s.substr(2);
-			offset = std::stoi(toConvert);
-		}
-		else
-		{
-			id = wxID_CANCEL;
+			wxMessageBox(L"Invalid offset. Please type only hex digits (0-9, a-f/A-F)", L"Error", wxICON_ERROR);
+			return;
 		}
 
-		size_t index = m_RelativeBox->GetSelection();
-
-		//if (index == 1)
-		//{
-		//	offset += m_CurPos;
-		//}
-		//else if (index == 2)
-		//{
-		//	offset = m_CurPos -= offset;
-		//}
-		//else if (index == 3)
-		//{
-		//	offset = m_FileSize - offset;
-		//}
-
-		m_Offset = offset;
+		m_Offset = std::stoi(s, nullptr, 16);
+		EndModal(wxID_OK);
+	} else 
+	{
+		EndModal(wxID_CANCEL);
 	}
-	
-	EndModal(id);
 }
 
 void OffsetDialog::CreateGUIControls()

@@ -37,3 +37,15 @@ SET(HDR
 add_executable(MoonHex ${SRC} ${HDR})
 
 target_link_libraries(MoonHex ${wxWidgets_LIBRARIES})
+
+
+install(TARGETS MoonHex
+    COMPONENT linapp
+    RUNTIME DESTINATION "/home/"
+    LIBRARY DESTINATION "/home/"
+    DESTINATION "/home/"
+)
+
+SET(CPACK_GENERATOR "DEB")
+SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "KK") #required
+INCLUDE(CPack)

@@ -73,7 +73,7 @@ void MainFrame::OnGoOffset()
 	OffsetDialog dialog(m_HexView->GetOffset(), m_HexView->GetFileSize());
 	if (dialog.ShowModal() != wxID_CANCEL)
 	{
-		m_HexView->SetOffset(dialog.GetOffset());
+		m_HexView->SetOffset(dialog.GetOffset(), true);
 	}
 }
 
