@@ -404,9 +404,7 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 	wxPoint position = event.GetPosition();	
 
 	if(m_ByteWindowRect.Contains(position))
-	{
-		event.Skip(false);
-
+	{		
 		position.x -= m_ByteWindowRect.x;
 		position.x += GetVisibleColumnsBegin();
 
@@ -421,6 +419,8 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 		y += GetVisibleRowsBegin();
 
 		SetOffset(x+(y*m_Col));
+
+		m_SelectedByte = true;
 
 		event.Skip(false);
 		Refresh();
@@ -448,12 +448,13 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 
 		SetOffset(x+(y*m_Col));
 
+		m_SelectedByte = false;
+
 		event.Skip(false);
 		Refresh();
 	} else 
 	{
-		event.Skip(true);
-		Refresh();
+		event.Skip();
 	}
 }
 
@@ -479,7 +480,11 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 				SetOffset(m_Offset-1);
 			}
 
-			m_RightNibble = !m_RightNibble;
+			if(m_SelectedByte)
+			{
+				m_RightNibble = !m_RightNibble;
+			}
+			
 			SetLastOffsetChange();
 		break;
 		case wxKeyCode::WXK_RIGHT:
@@ -489,7 +494,11 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 				SetOffset(m_Offset+1);
 			}
 			
-			m_RightNibble = !m_RightNibble;
+			if(m_SelectedByte)
+			{
+				m_RightNibble = !m_RightNibble;
+			}
+
 			SetLastOffsetChange();
 		break;
 		case wxKeyCode::WXK_UP:
@@ -515,6 +524,11 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 		break;
 		case wxKeyCode::WXK_TAB:
 			m_SelectedByte = !m_SelectedByte;
+
+			if(!m_SelectedByte)
+			{
+				m_RightNibble = false;
+			}
 		break;
 		case wxKeyCode::WXK_PAGEUP:
 			if(m_Offset >= m_Rows*m_Col)
