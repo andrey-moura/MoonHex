@@ -24,7 +24,7 @@ public:
 	~wxHexCtrl() = default;
 public:
 	void OpenFile(const wxString& path);
-	void OpenTable(const wxString& path);
+	void OpenTable(const wxString& path);	
 	void SetOffset(size_t offset, bool scroll = false);	
 	void SetLastOffsetChange();	
 	size_t GetOffset();
@@ -38,6 +38,7 @@ private:
 	wxTimer m_UpdateSel;	
 //Sub windows stuff
 private:	
+	wxRect m_ColWindowRect;
 	wxRect m_OffsetWindowRect;
 	wxRect m_ByteWindowRect;
 	wxRect m_CharWindowRect;
@@ -53,6 +54,18 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_LastOffsetChange;
 	wxColour m_CaretSelBg[2] = { {192, 192, 192}, {0, 0, 255} };	
 	wxColour m_CaretSelFore[2] = { {0, 0, 0}, {255, 255, 0} };	
+//Selection
+private:
+	uint32_t m_SelStart = 0;
+	uint32_t m_SelLength = 0;
+	wxColour m_SelPenColour = { 20, 205, 196 };
+	wxColour m_SelBrushColour = { 202, 245, 246 };
+	bool IsSquareSelection();
+public:
+	size_t GetSelStart() const { return m_SelStart; }
+	size_t GetSelEnd() const { return m_SelStart+m_SelLength-1; }	
+	wxPosition GetSelPosition() const;
+	wxPosition GetSelEndPosition() const;
 //Table	
 private:
 	Moon::Hacking::Table m_Table;	
@@ -70,11 +83,13 @@ private:
 	void DrawSeparator(wxDC& dc, wxPoint start, wxPoint end);
 	void DrawBytePage(wxDC& dc);
 	void DrawCharPage(wxDC& dc);
+	void DrawCols(wxDC& dc);
 	void DrawOffsets(wxDC& dc);	
 	void DrawCaret(wxDC& dc);
 	void DrawRect(wxDC& dc, const wxRect& r, const wxColour& c);
 	void DrawByte(wxDC& dc, const uint8_t& b, const wxPoint& p, const wxColour& c);
 	bool CanDrawChar(const char& _c);
+	void DrawSelection(wxDC& dc);
 	size_t GetLastDrawingLine();
 	//void DrawSelection(wxDC& dc);
 //Events

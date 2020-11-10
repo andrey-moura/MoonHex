@@ -3,9 +3,11 @@
 #include <wx/utils.h>
 #include <wx/stdpaths.h>
 
-MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, "MoonHex")
+MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, L"MoonHex", wxDefaultPosition, wxDefaultSize, wxMAXIMIZE | wxDEFAULT_FRAME_STYLE)
 {	
 	CreateGUIControls();
+
+	wxFont::AddPrivateFont(L"Font/Courier New.ttf");
 
 	Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnClose, this);
 	m_FileWatcher.Bind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);
@@ -37,14 +39,16 @@ void MainFrame::CreateGUIControls()
 
 void MainFrame::OnOpenFile()
 {
-	wxFileDialog dialog(nullptr, "Select a binary file");
+	wxString path = m_FileName.GetPath();	
+
+	wxFileDialog dialog(nullptr, "Select a binary file", path);
 
 	if (dialog.ShowModal() != wxID_CANCEL)
 		OpenFile(dialog.GetPath());
 }
 
 void MainFrame::OnOpenTable()
-{
+{	
 	wxFileDialog dialog(nullptr, "Select a table file");
 
 	if (dialog.ShowModal() != wxID_CANCEL)
@@ -56,16 +60,16 @@ void MainFrame::OpenFile(const wxString& path)
 	if (!m_File.Open(path))
 		return;
 
-	m_FileName.SetPath(path);	
+	m_FileName = path;
 
 	SetTitle(m_FileName.GetFullName());
 	m_HexView->OpenFile(path);
 
-	m_FileWatcher.RemoveAll();
+	//m_FileWatcher.RemoveAll();
 
-	wxFileName fn = wxFileName::DirName(path.substr(0, path.find_last_of(m_FileName.GetPathSeparator())));
+	//wxFileName fn = wxFileName::DirName(path.substr(0, path.find_last_of(m_FileName.GetPathSeparator())));
 
-	m_FileWatcher.Add(fn);
+	//m_FileWatcher.Add(fn);
 }
 
 void MainFrame::OnGoOffset()

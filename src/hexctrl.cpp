@@ -1,8 +1,11 @@
 #include "hexctrl.hpp"
 
 wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(parent, id)
-{
-	SetFont(wxFontInfo(10).FaceName("Courier New"));
+{	
+	wxFontInfo info = wxFontInfo(10).FaceName("Courier New");
+	wxFontStyle style = info.GetStyle();
+
+	SetFont(info);
 	SetBackgroundColour(wxColor(255, 255, 255, 255));
 	CalculateMinSize();
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -52,16 +55,28 @@ void wxHexCtrl::CalculateMinSize()
 	if (!m_File.IsOpened())
 		return;
 
-	size_t rows = m_File.Length() / m_Col;
+	size_t rows = 0;
 
-	if (rows % m_Col != 0)
-		++rows;
+	if(m_File.Length() < m_Col)
+	{
+		rows = 1;
+	}
+	else 
+	{
+		rows = m_File.Length() / m_Col;
+
+		if (rows % m_Col != 0)
+			++rows;
+	}		
 
 	m_CharSize = GetTextExtent("A");		
 
+	m_ColWindowRect.SetPosition({0, 0});	
+	m_ColWindowRect.height = m_CharSize.GetHeight();
+
 	m_OffsetWindowRect.width = m_CharSize.GetWidth()*10 /* 8 character + one margin left and right*/;
 	m_OffsetWindowRect.height = GetSize().GetHeight();
-	m_OffsetWindowRect.SetPosition({ 0, 0 });
+	m_OffsetWindowRect.SetPosition(m_ColWindowRect.GetLeftBottom());
 
 	m_ByteWindowRect.width = ((m_CharSize.GetWidth()*3)*m_Col) + m_CharSize.GetWidth()/* one char for each nibble + one space for each byte */; //+ one padding on right
 	m_ByteWindowRect.height = GetSize().GetHeight();
@@ -71,7 +86,10 @@ void wxHexCtrl::CalculateMinSize()
 	m_CharWindowRect.height = GetSize().GetHeight();
 	m_CharWindowRect.SetPosition(m_ByteWindowRect.GetRightTop());
 
-	SetRowColumnCount(rows, m_OffsetWindowRect.width+m_ByteWindowRect.width+m_CharWindowRect.width);	
+	size_t width = m_OffsetWindowRect.width+m_ByteWindowRect.width+m_CharWindowRect.width;
+
+	SetRowColumnCount(rows+1, width/m_CharSize.GetWidth());	
+	m_ColWindowRect.SetBottomRight(m_CharWindowRect.GetTopRight());
 
 	size_t lineStart = GetVisibleRowsBegin();
 	size_t lineEnd = GetVisibleRowsEnd();
@@ -131,6 +149,75 @@ wxPoint wxHexCtrl::GetCharPosition(const size_t& offset)
 	return point;
 }
 
+//-----------------------------------------------------------------------------------------------------------------//
+
+wxPosition wxHexCtrl::GetSelPosition() const
+{
+	return wxPosition(m_SelStart / m_Col, m_SelStart % m_Col);
+}
+
+wxPosition wxHexCtrl::GetSelEndPosition() const
+{
+	return wxPosition(GetSelEnd() / m_Col, GetSelEnd() % m_Col);
+}
+
+bool wxHexCtrl::IsSquareSelection()
+{	
+	wxPosition start_sel = GetSelPosition();
+	wxPosition end_sel = GetSelEndPosition();
+
+	if(start_sel.GetRow() == end_sel.GetRow())
+		return true;
+
+	if(start_sel.GetCol() == 0 && end_sel.GetCol() == m_Col-1)
+		return true;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------------------------------------------//
+
+void wxHexCtrl::DrawCols(wxDC& dc)
+{
+	dc.SetTextForeground(wxColour(0, 0, 191, 255));
+	wxPoint cur_pos = m_ColWindowRect.GetPosition();
+	cur_pos.y = GetVisibleRowsBegin()*m_CharSize.GetHeight();
+
+	cur_pos.x += m_CharSize.GetWidth()*2; //padding
+
+	wxString label = L"Offset";
+
+	dc.DrawText(label, cur_pos);
+
+	cur_pos.x += label.size()*m_CharSize.GetWidth();
+	cur_pos.x += m_CharSize.GetWidth()*2; //padding
+	cur_pos.x -= 1;	
+
+	for(uint8_t i = 0; i < m_Col; ++i)
+	{
+		wxPoint p = GetBytePosition(i);
+		cur_pos.x = p.x;
+
+		std::string hex_str = Moon::BitConverter::ToHexString<uint8_t>(i);
+
+		dc.DrawText(hex_str, cur_pos);
+	}
+
+	wxString ancii = L"ANSI ASCII";
+
+	size_t ancii_width = ancii.size() * m_CharSize.GetWidth();
+	size_t char_page_width = m_CharWindowRect.width;
+
+	size_t x = (char_page_width - ancii_width) / 2;
+	x += m_CharWindowRect.x;
+	cur_pos.x = x;
+
+	dc.SetTextForeground(wxColour(130, 122, 190));
+	dc.DrawText(ancii, cur_pos);	
+
+	DrawSeparator(dc, m_ColWindowRect.GetBottomLeft(), m_ColWindowRect.GetBottomRight());
+}
+
 void wxHexCtrl::DrawOffsets(wxDC& dc)
 {	
 	dc.SetTextForeground(wxColour(0, 0, 191, 255));
@@ -139,7 +226,10 @@ void wxHexCtrl::DrawOffsets(wxDC& dc)
 	uint32_t offset = lineStart * m_Col;
 	size_t lineEnd = GetLastDrawingLine();
 
-	wxPoint curPos(m_CharSize.GetWidth(), 0);
+	wxPoint curPos(m_OffsetWindowRect.GetPosition());
+	curPos.x += m_CharSize.GetWidth(); //padding
+
+	curPos.y += lineStart*m_CharSize.GetHeight();
 
 	size_t charWidth = m_CharSize.GetWidth();
 	size_t charHeight = m_CharSize.GetHeight();	
@@ -149,10 +239,14 @@ void wxHexCtrl::DrawOffsets(wxDC& dc)
 		std::string offsetText = Moon::BitConverter::ToHexString(offset);
 		offset += m_Col;
 
-		dc.DrawText(offsetText, charWidth, charHeight * line);
+		dc.DrawText(offsetText, curPos);
+		curPos.y += charHeight;
 	}
 
-	DrawSeparator(dc, m_OffsetWindowRect.GetRightTop(), m_OffsetWindowRect.GetRightBottom());
+	wxPoint p = m_OffsetWindowRect.GetRightTop();
+	p.y = 0;
+
+	DrawSeparator(dc, p, m_OffsetWindowRect.GetRightBottom());
 }
 
 void wxHexCtrl::OnDraw(wxDC& dc)
@@ -162,6 +256,8 @@ void wxHexCtrl::OnDraw(wxDC& dc)
 	if (!m_File.IsOpened())
 		return;
 
+	DrawSelection(dc);
+	DrawCols(dc);
 	DrawOffsets(dc);
 	DrawLines(dc);	
 	DrawBytePage(dc);
@@ -225,7 +321,9 @@ void wxHexCtrl::DrawBytePage(wxDC& dc)
 		line.reserve((m_Col * 3));
 
 		size_t charHeight = m_CharSize.GetHeight();
-		wxPoint currentPoint = wxPoint(m_ByteWindowRect.x+m_CharSize.GetWidth(), posStart.GetRow() *charHeight);
+		wxPoint currentPoint = m_ByteWindowRect.GetPosition();		
+		currentPoint.x += m_CharSize.GetWidth(); //padding
+		currentPoint.y += posStart.GetRow()*m_CharSize.GetHeight();
 
 		size_t lineEnd = GetLastDrawingLine();
 
@@ -253,7 +351,9 @@ void wxHexCtrl::DrawBytePage(wxDC& dc)
 		}
 	}
 
-	DrawSeparator(dc, m_ByteWindowRect.GetTopRight(), m_ByteWindowRect.GetBottomRight());
+	wxPoint p = m_ByteWindowRect.GetTopRight();
+	p.y = 0;
+	DrawSeparator(dc, p, m_ByteWindowRect.GetBottomRight());
 }
 
 void wxHexCtrl::DrawCharPage(wxDC& dc)
@@ -266,6 +366,7 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 
 	size_t charHeight = m_CharSize.GetHeight();
 	wxPoint currentPoint(m_CharWindowRect.x+m_CharSize.GetWidth(), m_CharSize.GetHeight() * posStart.GetRow());
+	currentPoint.y += m_CharSize.GetHeight();
 
 	std::string lineText;
 	lineText.reserve(m_Col);
@@ -306,7 +407,9 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 		currentPoint.y += charHeight;
 	}
 
-	DrawSeparator(dc, m_CharWindowRect.GetRightTop(), m_CharWindowRect.GetRightBottom());
+	wxPoint p = m_CharWindowRect.GetRightTop();
+	p.y = 0;
+	DrawSeparator(dc, p, m_CharWindowRect.GetRightBottom());
 }
 
 void wxHexCtrl::DrawRect(wxDC& dc, const wxRect& r, const wxColour& c)
@@ -352,6 +455,67 @@ void wxHexCtrl::DrawCaret(wxDC& dc)
 		wxString s(&c, wxCSConv(wxFONTENCODING_CP1252), 1);
 		dc.SetTextForeground(m_CaretSelFore[!m_SelectedByte]);
 		dc.DrawText(s, GetCharPosition(m_Offset));
+	}
+}
+
+void wxHexCtrl::DrawSelection(wxDC& dc)
+{
+	if(m_SelLength == 0)
+		return;
+
+	wxPosition sel_start = GetSelPosition();
+	wxPosition sel_end = GetSelEndPosition();
+
+	if(sel_start.GetRow() < GetVisibleRowsBegin())
+		return;
+
+	if(sel_end.GetRow() > GetVisibleRowsEnd())
+		return;
+
+	wxPen pen(m_SelPenColour, 2, wxPENSTYLE_SOLID);
+	wxBrush brush(m_SelBrushColour, wxBRUSHSTYLE_SOLID);		
+
+	dc.SetPen(*wxTRANSPARENT_PEN);
+
+	if(IsSquareSelection())
+	{
+		//dc.SetPen(pen);
+		dc.SetBrush(brush);
+
+		wxPoint left_top = GetCharPosition(m_SelStart);
+		wxPoint right_bottom = GetCharPosition(GetSelEnd());
+
+		right_bottom.y += m_CharSize.GetHeight();
+		right_bottom.x += m_CharSize.GetWidth();
+
+		wxRect r(left_top, right_bottom);
+
+		dc.DrawRectangle(r);
+	} else 
+	{
+		wxPoint p = GetCharPosition(m_SelStart);		
+		size_t first_width = (m_Col-sel_start.GetCol())*m_CharSize.GetWidth();
+		
+		dc.SetBrush(brush);
+		dc.DrawRectangle(p.x, p.y, first_width, m_CharSize.GetHeight());
+
+		// dc.SetPen(*wxTRANSPARENT_PEN);
+
+		for(size_t line = sel_start.GetRow()+1; line < sel_end.GetRow(); ++line)
+		{
+		 	p.y += m_CharSize.GetHeight();
+		 	dc.DrawRectangle(p.x, p.y, m_Col * m_CharSize.GetWidth(), m_CharSize.GetHeight());
+		}
+
+		// size_t line_end_offset = end_line * m_Col;
+		// size_t cols2 = end_offset - line_end_offset;
+
+		p.y += m_CharSize.GetHeight();
+		dc.DrawRectangle(p.x, p.y, sel_end.GetCol() * m_CharSize.GetWidth(), m_CharSize.GetHeight());
+
+		// dc.SetPen(pen);
+		
+		// dc.DrawLine(p.x, GetCharPosition(line_start+1).y*m_CharSize.GetHeight(), p.x, GetCharPosition(end_line-1).y*m_CharSize.GetHeight());
 	}
 }
 
@@ -415,8 +579,16 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 			return; //padding			
 
 		m_RightNibble = n-1;
+
 		size_t y = (position.y / m_CharSize.y);
-		y += GetVisibleRowsBegin();
+
+		if(y == 0)
+			return;				
+
+		y += GetVisibleRowsBegin()-1;
+
+		if(y > m_Rows)
+			return;
 
 		SetOffset(x+(y*m_Col));
 
@@ -441,10 +613,13 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 		
 		size_t y = (position.y / m_CharSize.y);
 
+		if(y == 0)
+			return;				
+
+		y += GetVisibleRowsBegin()-1;
+
 		if(y > m_Rows)
 			return;
-
-		y += GetVisibleRowsBegin();
 
 		SetOffset(x+(y*m_Col));
 
@@ -488,6 +663,28 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 			SetLastOffsetChange();
 		break;
 		case wxKeyCode::WXK_RIGHT:
+
+			if(event.ShiftDown())
+			{
+				if(m_SelLength == 0)
+				{
+					m_SelStart = m_Offset;
+					m_SelLength = 1;
+				} else
+				{
+					if(m_SelectedByte)
+					{
+						if(m_RightNibble)
+						{
+							m_SelLength++;
+						}
+					}
+					else 
+					{
+						m_SelLength++;
+					}					
+				}
+			}
 
 			if(m_RightNibble || (!m_SelectedByte))
 			{

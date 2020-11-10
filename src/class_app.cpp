@@ -4,7 +4,7 @@ wxIMPLEMENT_APP(RomHexEditorApp);
 
 bool RomHexEditorApp::OnInit()
 {	
-	MainFrame* mainFrame = new MainFrame();
+	MainFrame* mainFrame = new MainFrame();	
 	mainFrame->Show();
 
 	if (argc > 1)
