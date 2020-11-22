@@ -7,7 +7,9 @@ MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, L"MoonHex", wxDefaultPositio
 {	
 	CreateGUIControls();
 
+#ifdef __WXGTK__
 	wxFont::AddPrivateFont(L"Font/Courier New.ttf");
+#endif
 
 	Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnClose, this);
 	m_FileWatcher.Bind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);

@@ -6,9 +6,14 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	wxFontStyle style = info.GetStyle();
 
 	SetFont(info);
-	SetBackgroundColour(wxColor(255, 255, 255, 255));
-	CalculateMinSize();
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
+	SetBackgroundColour(wxColor(255, 255, 255, 255));
+
+#ifdef __WXMSW__
+	SetDoubleBuffered(true);
+#endif
+
+	CalculateMinSize();
 	m_UpdateSel.Start(600);	
 
 	m_UpdateSel.Bind(wxEVT_TIMER, &wxHexCtrl::OnSelectionTimer, this);
@@ -259,7 +264,7 @@ void wxHexCtrl::OnDraw(wxDC& dc)
 	DrawSelection(dc);
 	DrawCols(dc);
 	DrawOffsets(dc);
-	DrawLines(dc);	
+	//DrawLines(dc);	
 	DrawBytePage(dc);
 	DrawCharPage(dc);
 	DrawCaret(dc);
@@ -291,7 +296,7 @@ void wxHexCtrl::DrawLines(wxDC& dc)
 
 void wxHexCtrl::DrawSeparator(wxDC& dc, wxPoint start, wxPoint end)
 {	
-	dc.SetPen(wxPen(wxColour(SEPARATOR_COLOR), 1, wxPENSTYLE_SOLID));
+	dc.SetPen(wxPen(wxColour(200, 200, 200), 1, wxPENSTYLE_SOLID));
 
 	wxPosition posStart = GetVisibleBegin();
 

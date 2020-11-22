@@ -11,12 +11,6 @@
 #include <moon/table.hpp>
 #include <moon/bit_conv.hpp>
 
-#ifdef _DEBUG
-#define SEPARATOR_COLOR 197,0,0
-#else 
-#define SEPARATOR_COLOR 200,200,200
-#endif
-
 class wxHexEvent : public wxEvent
 {	
 public:
