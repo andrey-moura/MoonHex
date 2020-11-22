@@ -17,6 +17,41 @@
 #define SEPARATOR_COLOR 200,200,200
 #endif
 
+class wxHexEvent : public wxEvent
+{	
+public:
+	wxHexEvent(wxEventType hexType = wxEVT_NULL) :
+		wxEvent(hexType)
+		{
+
+		}		
+
+	wxHexEvent(wxWindowID winId, wxEventType hexType = wxEVT_NULL) :
+		wxEvent(winId, hexType)
+		{
+
+		}
+
+	wxHexEvent(const wxHexEvent& event) :
+		wxEvent(event)
+		{
+			SetOffset(event.GetOffset());
+		}
+
+	wxEvent* Clone() const 
+	{
+		return new wxHexEvent(*this);
+	}
+private:
+	uint32_t m_Offset;
+public:
+	uint32_t GetOffset() const { return m_Offset; }
+
+	void SetOffset(uint32_t offset) { m_Offset = offset; }
+};
+
+typedef void (wxEvtHandler::*wxHexEventFunction)(wxHexEvent& event);
+
 class wxHexCtrl : public wxHVScrolledWindow
 {
 public:

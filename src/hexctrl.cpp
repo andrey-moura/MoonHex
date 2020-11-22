@@ -371,7 +371,7 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	std::string lineText;
 	lineText.reserve(m_Col);
 
-	size_t lastLine = GetLastDrawingLine();
+	size_t lastLine = GetLastDrawingLine();	
 
 	for (size_t line = posStart.GetRow(); line < lastLine; ++line)
 	{
