@@ -11,40 +11,31 @@
 #include <moon/table.hpp>
 #include <moon/bit_conv.hpp>
 
-class wxHexEvent : public wxEvent
+class wxHexEvent : public wxNotifyEvent
 {	
 public:
 	wxHexEvent(wxEventType hexType = wxEVT_NULL) :
-		wxEvent(hexType)
-		{
-
-		}		
+		wxNotifyEvent(hexType) { }
 
 	wxHexEvent(wxWindowID winId, wxEventType hexType = wxEVT_NULL) :
-		wxEvent(winId, hexType)
-		{
-
-		}
+		wxNotifyEvent(winId, hexType) { }
 
 	wxHexEvent(const wxHexEvent& event) :
-		wxEvent(event)
-		{
-			SetOffset(event.GetOffset());
-		}
+		wxNotifyEvent(event) { SetOffset(event.GetOffset()); }
 
-	wxEvent* Clone() const 
-	{
-		return new wxHexEvent(*this);
-	}
+	virtual wxEvent* Clone() const override { return new wxHexEvent(*this);	}	
 private:
 	uint32_t m_Offset;
 public:
 	uint32_t GetOffset() const { return m_Offset; }
-
 	void SetOffset(uint32_t offset) { m_Offset = offset; }
+
+	wxDECLARE_DYNAMIC_CLASS(wxHexEvent);
 };
 
-typedef void (wxEvtHandler::*wxHexEventFunction)(wxHexEvent& event);
+typedef void (wxEvtHandler::*wxHexEventFunction)(wxHexEvent&);
+
+wxDECLARE_EVENT(wxEVT_HEX_OFFSET_CHANGED, wxHexEvent);
 
 class wxHexCtrl : public wxHVScrolledWindow
 {
@@ -59,6 +50,9 @@ public:
 	size_t GetOffset();
 	size_t GetFileSize() { return m_File.Length(); }
 	size_t GetPageByteCount() { return m_Col*GetRowCount(); }
+	const uint8_t* GetData() const { return m_Data; }
+private:
+	void InternalSetOffset(uint32_t offset, bool scroll = false);
 private:
 	wxFile m_File;
 	uint8_t* m_Data = nullptr;
@@ -104,6 +98,8 @@ private:
 private:
 	virtual wxCoord OnGetRowHeight(size_t row) const;
 	virtual wxCoord OnGetColumnWidth(size_t col) const;
+//Send Events
+	bool SendOffsetChanged(uint32_t newOffset);
 //Drawing
 private:	
 	void CalculateMinSize();

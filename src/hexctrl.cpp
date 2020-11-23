@@ -1,5 +1,8 @@
 #include "hexctrl.hpp"
 
+wxIMPLEMENT_DYNAMIC_CLASS(wxHexEvent, wxNotifyEvent);
+wxDEFINE_EVENT(wxEVT_HEX_OFFSET_CHANGED, wxHexEvent);
+
 wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(parent, id)
 {	
 	wxFontInfo info = wxFontInfo(10).FaceName("Courier New");
@@ -120,6 +123,14 @@ void wxHexCtrl::SetOffset(size_t offset, bool scroll)
 		ScrollToRow(offset / m_Col);
 
 	Refresh();
+}
+
+void wxHexCtrl::InternalSetOffset(uint32_t offset, bool scroll)
+{
+	if (SendOffsetChanged(offset))
+	{
+		SetOffset(offset, scroll);
+	}
 }
 
 void wxHexCtrl::SetLastOffsetChange()
@@ -593,9 +604,9 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 		y += GetVisibleRowsBegin()-1;
 
 		if(y > m_Rows)
-			return;
+			return;		
 
-		SetOffset(x+(y*m_Col));
+		InternalSetOffset(x + (y * m_Col));
 
 		m_SelectedByte = true;
 
@@ -626,7 +637,7 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 		if(y > m_Rows)
 			return;
 
-		SetOffset(x+(y*m_Col));
+		InternalSetOffset(x + (y * m_Col));
 
 		m_SelectedByte = false;
 
@@ -657,15 +668,14 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 					return;
 				}
 
-				SetOffset(m_Offset-1);
+				InternalSetOffset(m_Offset - 1);				
 			}
 
 			if(m_SelectedByte)
 			{
 				m_RightNibble = !m_RightNibble;
-			}
-			
-			SetLastOffsetChange();
+				SetLastOffsetChange();
+			}						
 		break;
 		case wxKeyCode::WXK_RIGHT:
 
@@ -693,36 +703,28 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 
 			if(m_RightNibble || (!m_SelectedByte))
 			{
-				SetOffset(m_Offset+1);
+				InternalSetOffset(m_Offset+1);
 			}
 			
 			if(m_SelectedByte)
 			{
 				m_RightNibble = !m_RightNibble;
+				SetLastOffsetChange();
 			}
-
-			SetLastOffsetChange();
+			
 		break;
-		case wxKeyCode::WXK_UP:
-
-			if(m_Offset >= m_Col)
+		case wxKeyCode::WXK_UP:			
+			if (m_Offset >= m_Col)
 			{
-				if((m_Offset / m_Col) - GetVisibleRowsBegin() == 0)
-				{
-					ScrollToRow(GetVisibleRowsBegin()-1);
-				}
-
-				SetOffset(m_Offset-m_Col);
+				InternalSetOffset(m_Offset - m_Col, true);				
 			}
-
 		break;
 		case wxKeyCode::WXK_DOWN:			
-			SetOffset(m_Offset+m_Col);
-
-			if((m_Offset / m_Col) > GetLastDrawingLine()-1)
+			
+			if (m_Offset + m_Col)
 			{
-				ScrollToRow(GetVisibleRowsBegin()+1);
-			}
+				InternalSetOffset(m_Offset + m_Col, true);
+			}			
 		break;
 		case wxKeyCode::WXK_TAB:
 			m_SelectedByte = !m_SelectedByte;
@@ -730,16 +732,17 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 			if(!m_SelectedByte)
 			{
 				m_RightNibble = false;
+				SetLastOffsetChange();
 			}
 		break;
 		case wxKeyCode::WXK_PAGEUP:
 			if(m_Offset >= m_Rows*m_Col)
 			{
-				SetOffset(m_Offset - m_Rows*m_Col, true);
+				InternalSetOffset(m_Offset - m_Rows * m_Col);				
 			}			
 		break;
-		case wxKeyCode::WXK_PAGEDOWN:						
-			SetOffset(m_Offset + m_Rows*m_Col, true);
+		case wxKeyCode::WXK_PAGEDOWN:
+			InternalSetOffset(m_Offset + m_Rows * m_Col);
 		break;		
 		default:
 			event.Skip();
@@ -777,7 +780,7 @@ void wxHexCtrl::OnChar(wxKeyEvent& event)
 
 		if(m_RightNibble)
 		{
-			++m_Offset;
+			InternalSetOffset(m_Offset+1);
 		} 
 		
 		m_RightNibble = !m_RightNibble;		
@@ -786,7 +789,9 @@ void wxHexCtrl::OnChar(wxKeyEvent& event)
 	{	
 		uint8_t c = event.GetUnicodeKey();
 		m_Data[m_Offset] = c;
-		++m_Offset;
+		
+		InternalSetOffset(m_Offset + 1);
+
 		event.Skip(false);
 	}	
 }
@@ -799,6 +804,21 @@ wxCoord wxHexCtrl::OnGetRowHeight(size_t row) const
 wxCoord wxHexCtrl::OnGetColumnWidth(size_t col) const
 {
 	return wxCoord(m_CharSize.GetWidth());
+}
+
+//==============================================================================//
+//									SEND EVENTS									//
+//==============================================================================//
+
+bool wxHexCtrl::SendOffsetChanged(uint32_t newOffset)
+{
+	wxHexEvent event(wxEVT_HEX_OFFSET_CHANGED, GetId());
+	event.SetEventObject(this);
+	event.SetOffset(newOffset);
+
+	ProcessWindowEvent(event);
+
+	return event.GetSkipped();
 }
 
 void wxHexCtrl::OnSelectionTimer(wxTimerEvent& event)
