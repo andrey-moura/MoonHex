@@ -10,9 +10,6 @@ MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, L"MoonHex", wxDefaultPositio
 #ifdef __WXGTK__
 	wxFont::AddPrivateFont(L"Font/Courier New.ttf");
 #endif
-
-	Bind(wxEVT_CLOSE_WINDOW, &MainFrame::OnClose, this);
-	m_FileWatcher.Bind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);
 }
 
 void MainFrame::CreateGUIControls()
@@ -102,12 +99,6 @@ void MainFrame::OpenFile(const wxString& path)
 	m_HexView->SetData(data, file.Length());
 	
 	delete[] old_data;
-
-	//m_FileWatcher.RemoveAll();
-
-	//wxFileName fn = wxFileName::DirName(path.substr(0, path.find_last_of(m_FileName.GetPathSeparator())));
-
-	//m_FileWatcher.Add(fn);
 }
 
 void MainFrame::OnGoOffset()
@@ -216,7 +207,5 @@ void MainFrame::OnFileWatcher(wxFileSystemWatcherEvent& event)
 
 void MainFrame::OnClose(wxCloseEvent& event)
 {
-	m_FileWatcher.Unbind(wxEVT_FSWATCHER, &MainFrame::OnFileWatcher, this);
-
 	event.Skip();
 }

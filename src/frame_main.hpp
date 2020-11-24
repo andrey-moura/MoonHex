@@ -16,10 +16,7 @@ public:
     MainFrame();    
     ~MainFrame() = default;
 private:
-    wxHexCtrl* m_HexView = nullptr;
-    wxFileSystemWatcher m_FileWatcher;
-
-    //In future, the wxHexCtrl will not have access to files...
+    wxHexCtrl* m_HexView = nullptr;    
     wxFile m_File;
     //Why the wxFile have no option to get the path...?
     wxFileName m_FileName;    
