@@ -37,7 +37,6 @@ include_directories(include)
 
 SET(SRC
 	src/class_app.cpp
-	src/class_bit_converter.cpp
 	src/dialog_file_changed.cpp
 	src/dialog_offset.cpp
 	src/dialog_search_hex.cpp
@@ -47,7 +46,6 @@ SET(SRC
 
 SET(HDR
 	src/class_app.hpp
-	src/class_bit_converter.hpp
 	src/dialog_file_changed.hpp
 	src/dialog_offset.hpp
 	src/dialog_search_hex.hpp
