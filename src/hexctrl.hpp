@@ -42,20 +42,27 @@ class wxHexCtrl : public wxHVScrolledWindow
 public:
 	wxHexCtrl(wxWindow* parent, wxWindowID id);
 	~wxHexCtrl() = default;
-public:
-	void OpenFile(const wxString& path);
-	void OpenTable(const wxString& path);	
+public:	
+	void SetTable(const Moon::Hacking::Table& table);
+
 	void SetOffset(size_t offset, bool scroll = false);	
-	void SetLastOffsetChange();	
 	size_t GetOffset();
-	size_t GetFileSize() { return m_File.Length(); }
+
+	void SetLastOffsetChange();	
+
+	size_t GetDataSize() const { return m_DataSize; }
+	const uint8_t* GetData() const { return m_pData; }
+	uint8_t* GetData() { return m_pData; }
+
+	void SetData(uint8_t* data);
+	void SetData(uint8_t* data, const uint32_t& size);
+
 	size_t GetPageByteCount() { return m_Col*GetRowCount(); }
-	const uint8_t* GetData() const { return m_Data; }
 private:
 	void InternalSetOffset(uint32_t offset, bool scroll = false);
-private:
-	wxFile m_File;
-	uint8_t* m_Data = nullptr;
+private:	
+	uint8_t* m_pData = nullptr;
+	uint32_t m_DataSize = 0;
 	size_t m_Col = 16;
 	size_t m_Rows;
 	//I don't want to calculate this every time

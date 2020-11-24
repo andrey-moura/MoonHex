@@ -72,7 +72,7 @@ void MainFrame::OnOpenTable()
 	wxFileDialog dialog(nullptr, "Select a table file");
 
 	if (dialog.ShowModal() != wxID_CANCEL)
-		m_HexView->OpenTable(dialog.GetPath());
+		m_HexView->SetTable(Moon::Hacking::Table(dialog.GetPath().ToStdString()));
 }
 
 void MainFrame::OpenFile(const wxString& path)
@@ -83,7 +83,25 @@ void MainFrame::OpenFile(const wxString& path)
 	m_FileName = path;
 
 	SetTitle(m_FileName.GetFullName());
-	m_HexView->OpenFile(path);
+
+	wxFile file(path);
+	uint8_t* old_data = m_HexView->GetData();
+	uint8_t* data = nullptr;
+
+	if(m_HexView->GetDataSize() == file.Length() && m_HexView->GetData())
+	{
+		data = old_data;
+		old_data = nullptr;
+	}
+	else 
+	{
+		data = new uint8_t[file.Length()];		
+	}
+
+	file.Read(data, file.Length());
+	m_HexView->SetData(data, file.Length());
+	
+	delete[] old_data;
 
 	//m_FileWatcher.RemoveAll();
 
@@ -94,7 +112,7 @@ void MainFrame::OpenFile(const wxString& path)
 
 void MainFrame::OnGoOffset()
 {
-	OffsetDialog dialog(m_HexView->GetOffset(), m_HexView->GetFileSize());
+	OffsetDialog dialog(m_HexView->GetOffset(), m_HexView->GetDataSize());
 	if (dialog.ShowModal() != wxID_CANCEL)
 	{
 		m_HexView->SetOffset(dialog.GetOffset(), true);
@@ -187,8 +205,8 @@ void MainFrame::OnFileWatcher(wxFileSystemWatcherEvent& event)
 				wxCENTER | wxNO_DEFAULT | wxYES_NO | wxCANCEL | wxICON_QUESTION);
 
 			if (dialog.ShowModal() != wxCANCEL)
-			{
-				m_HexView->OpenFile(m_FileName.GetFullPath());
+			{				
+				OpenFile(m_FileName.GetFullPath());				
 			}
 		}
 	}	

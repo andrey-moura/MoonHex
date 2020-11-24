@@ -28,53 +28,51 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	Bind(wxEVT_CHAR, &wxHexCtrl::OnChar, this);
 }
 
-void wxHexCtrl::OpenFile(const wxString& path)
+void wxHexCtrl::SetData(uint8_t* data)
 {
-	if (m_File.IsOpened())
-		m_File.Close();
+	m_pData = data;
 
-	if (m_Data != nullptr)
-		delete[] m_Data;
+	CalculateMinSize();
+	ScrollToRow(0);	
 
-	if (m_File.Open(path))
-	{
-		size_t size = m_File.Length();
-
-		m_Data = new uint8_t[size];
-
-		m_File.Read(m_Data, size);
-
-		m_Offset = 0;
-		CalculateMinSize();
-
-		ScrollToRow(0);		
-
-		Refresh();
-	}
+	Refresh();	
 }
 
-void wxHexCtrl::OpenTable(const wxString& path)
+void wxHexCtrl::SetData(uint8_t* data, const uint32_t& size)
 {
-	m_Table.Open(path.ToStdString());	
+	m_pData = data;
+	m_DataSize = size;
+
+	CalculateMinSize();
+	ScrollToRow(0);	
+
+	Refresh();
+}
+
+void wxHexCtrl::SetTable(const Moon::Hacking::Table& table)
+{
+	m_Table = table;
 	Refresh();
 }
 
 void wxHexCtrl::CalculateMinSize()
 {		
-	if (!m_File.IsOpened())
+	if (!m_pData)
+		return;
+
+	if(GetDataSize() == 0)
 		return;
 
 	size_t rows = 0;
 
-	if(m_File.Length() < m_Col)
+	if(GetDataSize() < m_Col)
 	{
 		rows = 1;
 	}
 	else 
-	{
-		uint32_t fileSize = m_File.Length();
-		rows = fileSize / m_Col;
-		m_LastLineSize = fileSize % m_Col;
+	{		
+		rows = GetDataSize() / m_Col;
+		m_LastLineSize = GetDataSize() % m_Col;
 
 		if (m_LastLineSize == 0)		
 		{
@@ -278,7 +276,10 @@ void wxHexCtrl::OnDraw(wxDC& dc)
 {	
 	dc.Clear();	
 
-	if (!m_File.IsOpened())
+	if(!GetData())
+		return;
+
+	if(!GetDataSize())
 		return;
 
 	DrawSelection(dc);
@@ -331,12 +332,13 @@ void wxHexCtrl::DrawSeparator(wxDC& dc, wxPoint start, wxPoint end)
 
 void wxHexCtrl::DrawBytePage(wxDC& dc)
 {
-	if(m_Data == nullptr)
+	if(!GetData())
 		return;	
+
+	if(!GetDataSize())
+		return;
 	
 	dc.SetTextForeground(wxColour(0, 0, 0));
-
-	size_t fileSize = m_File.Length();		
 
 	wxPosition posStart = GetVisibleBegin();	
 
@@ -364,7 +366,7 @@ void wxHexCtrl::DrawBytePage(wxDC& dc)
 
 		for (size_t col = 0; col < lineSize; ++col)
 		{
-			std::string byteText = Moon::BitConverter::ToHexString(m_Data[offset]);
+			std::string byteText = Moon::BitConverter::ToHexString(m_pData[offset]);
 			line.append(byteText);
 			line.push_back(' ');
 
@@ -386,9 +388,8 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 {
 	wxPosition posStart = GetVisibleBegin();
 	wxPosition posEnd = GetVisibleEnd();
-
-	size_t fileSize = m_File.Length();
-	size_t offset = posStart.GetRow() * m_Col;	
+	
+	size_t offset = posStart.GetRow() * m_Col;
 
 	size_t charHeight = m_CharSize.GetHeight();
 	wxPoint currentPoint(m_CharWindowRect.x+m_CharSize.GetWidth(), m_CharSize.GetHeight() * posStart.GetRow());
@@ -411,7 +412,7 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 		
 		for(size_t i = 0; i < lineSize; ++i)
 		{
-			uint8_t c = *(m_Data + offset + i);
+			uint8_t c = *(m_pData + offset + i);
 			//m_Table.Input(c);
 
 			if(CanDrawChar(c))
@@ -446,7 +447,7 @@ void wxHexCtrl::DrawRect(wxDC& dc, const wxRect& r, const wxColour& c)
 
 void wxHexCtrl::DrawByte(wxDC& dc, const uint8_t& b, const wxPoint& r, const wxColour& c)
 {
-	std::string hex_str = Moon::BitConverter::ToHexChar(m_Data[m_Offset]);	
+	std::string hex_str = Moon::BitConverter::ToHexChar(m_pData[m_Offset]);	
 
 	dc.SetTextForeground(c);
 	dc.DrawText(hex_str[m_RightNibble], r);
@@ -462,14 +463,14 @@ void wxHexCtrl::DrawCaret(wxDC& dc)
 	if(m_SelectedByte && m_DrawCaret || !m_SelectedByte)
 	{
 		DrawRect(dc, wxRect(GetBytePosition(m_Offset, m_RightNibble), m_CharSize), m_CaretSelBg[m_SelectedByte]);
-		DrawByte(dc, m_Data[m_Offset], GetBytePosition(m_Offset, m_RightNibble), m_CaretSelFore[m_SelectedByte]);
+		DrawByte(dc, m_pData[m_Offset], GetBytePosition(m_Offset, m_RightNibble), m_CaretSelFore[m_SelectedByte]);
 	}	
 
 	if(!m_SelectedByte && m_DrawCaret || m_SelectedByte)
 	{
 		DrawRect(dc, wxRect(GetCharPosition(m_Offset), m_CharSize), m_CaretSelBg[!m_SelectedByte]);	
 
-		char c = *((const char*)m_Data + m_Offset);
+		char c = *((const char*)m_pData + m_Offset);
 		m_Table.Input(c);
 
 		if(!CanDrawChar(c))
@@ -793,8 +794,8 @@ void wxHexCtrl::OnChar(wxKeyEvent& event)
 			return;
 		}
 
-		m_Data[m_Offset] = Moon::BitConverter::ReplaceNibble(
-		m_Data[m_Offset],
+		m_pData[m_Offset] = Moon::BitConverter::ReplaceNibble(
+		m_pData[m_Offset],
 		Moon::BitConverter::FromHexNibble(c),
 		!m_RightNibble);
 
@@ -808,7 +809,7 @@ void wxHexCtrl::OnChar(wxKeyEvent& event)
 	} else 
 	{	
 		uint8_t c = event.GetUnicodeKey();
-		m_Data[m_Offset] = c;
+		m_pData[m_Offset] = c;
 		
 		InternalSetOffset(m_Offset + 1);
 
