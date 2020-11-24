@@ -123,7 +123,7 @@ void MainFrame::PositionStatusBarItens()
 		m_pStatusValue->SetPosition(rect.GetPosition());
 
 		wxPoint position = m_pStatusValue->GetPosition();
-		position.x += 4; //padding
+		position.x += m_pStatusValue->GetSize().GetWidth() + 4; //padding
 
 		m_pStatusValueLine->SetPosition(position);
 	}
@@ -156,7 +156,7 @@ void MainFrame::OnMenuClick(wxCommandEvent& event)
 
 void MainFrame::OnStatusSize(wxSizeEvent& event)
 {
-	PositionStatusBar();
+	PositionStatusBarItens();
 	event.Skip();
 }
 
