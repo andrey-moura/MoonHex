@@ -57,7 +57,7 @@ SET(HDR
 
 if(WIN32)
 	add_executable(MoonHex WIN32 ${SRC} ${HDR})	
-elseif()
+else()
 	add_executable(MoonHex ${SRC} ${HDR})	
 	target_link_libraries(MoonHex ${wxWidgets_LIBRARIES})
 endif()
