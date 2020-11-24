@@ -77,28 +77,30 @@ void MainFrame::OpenFile(const wxString& path)
 	if (!m_File.Open(path))
 		return;
 
+	wxString old_path = m_FileName.GetFullPath();
+
 	m_FileName = path;
 
 	SetTitle(m_FileName.GetFullName());
 
-	wxFile file(path);
-	uint8_t* old_data = m_HexView->GetData();
-	uint8_t* data = nullptr;
+	wxFile file(path);	
 
-	if(m_HexView->GetDataSize() == file.Length() && m_HexView->GetData())
+	if(m_HexView->GetDataSize() == file.Length() && m_HexView->GetData() && old_path == m_FileName.GetFullPath())
 	{
-		data = old_data;
-		old_data = nullptr;
+		uint8_t* data = m_HexView->GetData();
+		file.Read(data, file.Length());
+
+		m_HexView->SetData(data);
 	}
 	else 
 	{
-		data = new uint8_t[file.Length()];		
-	}
+		uint8_t* data = new uint8_t[file.Length()];		
+		file.Read(data, file.Length());
 
-	file.Read(data, file.Length());
-	m_HexView->SetData(data, file.Length());
-	
-	delete[] old_data;
+		delete[] m_HexView->GetData();
+
+		m_HexView->SetData(data, file.Length());
+	}	
 }
 
 void MainFrame::OnGoOffset()

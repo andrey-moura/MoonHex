@@ -31,11 +31,7 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 void wxHexCtrl::SetData(uint8_t* data)
 {
 	m_pData = data;
-
-	CalculateMinSize();
-	ScrollToRow(0);	
-
-	Refresh();	
+	Refresh();
 }
 
 void wxHexCtrl::SetData(uint8_t* data, const uint32_t& size)
@@ -43,8 +39,8 @@ void wxHexCtrl::SetData(uint8_t* data, const uint32_t& size)
 	m_pData = data;
 	m_DataSize = size;
 
-	CalculateMinSize();
-	ScrollToRow(0);	
+	CalculateMinSize();	
+	InternalSetOffset(0, true);
 
 	Refresh();
 }
