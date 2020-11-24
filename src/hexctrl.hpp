@@ -58,6 +58,8 @@ private:
 	uint8_t* m_Data = nullptr;
 	size_t m_Col = 16;
 	size_t m_Rows;
+	//I don't want to calculate this every time
+	size_t m_LastLineSize;
 	wxTimer m_UpdateSel;	
 //Sub windows stuff
 private:	

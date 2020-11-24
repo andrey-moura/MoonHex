@@ -44,6 +44,7 @@ void wxHexCtrl::OpenFile(const wxString& path)
 
 		m_File.Read(m_Data, size);
 
+		m_Offset = 0;
 		CalculateMinSize();
 
 		ScrollToRow(0);		
@@ -71,10 +72,18 @@ void wxHexCtrl::CalculateMinSize()
 	}
 	else 
 	{
-		rows = m_File.Length() / m_Col;
+		uint32_t fileSize = m_File.Length();
+		rows = fileSize / m_Col;
+		m_LastLineSize = fileSize % m_Col;
 
-		if (rows % m_Col != 0)
-			++rows;
+		if (m_LastLineSize == 0)		
+		{
+			m_LastLineSize = m_Col;
+		}
+		else
+		{
+			++rows;			
+		}
 	}		
 
 	m_CharSize = GetTextExtent("A");		
@@ -322,50 +331,51 @@ void wxHexCtrl::DrawSeparator(wxDC& dc, wxPoint start, wxPoint end)
 
 void wxHexCtrl::DrawBytePage(wxDC& dc)
 {
-	if(m_Data != nullptr)
+	if(m_Data == nullptr)
+		return;	
+	
+	dc.SetTextForeground(wxColour(0, 0, 0));
+
+	size_t fileSize = m_File.Length();		
+
+	wxPosition posStart = GetVisibleBegin();	
+
+	size_t offset = posStart.GetRow() * m_Col;
+
+	std::string line;
+	line.reserve((m_Col * 3));
+
+	size_t charHeight = m_CharSize.GetHeight();
+
+	wxPoint currentPoint = m_ByteWindowRect.GetPosition();
+	currentPoint.x += m_CharSize.GetWidth(); //padding
+	currentPoint.y += posStart.GetRow()*m_CharSize.GetHeight();
+
+	size_t lineEnd = GetLastDrawingLine();
+
+	size_t lineSize = m_Col;
+
+	for (size_t y = posStart.GetRow(); y < lineEnd; ++y)
 	{
-		dc.SetTextForeground(wxColour(0, 0, 0));
-
-		size_t fileSize = m_File.Length();		
-
-		wxPosition posStart = GetVisibleBegin();
-		wxPosition posEnd = GetVisibleEnd();
-
-		size_t offset = m_Col * posStart.GetRow();
-
-		std::string line;
-		line.reserve((m_Col * 3));
-
-		size_t charHeight = m_CharSize.GetHeight();
-		wxPoint currentPoint = m_ByteWindowRect.GetPosition();		
-		currentPoint.x += m_CharSize.GetWidth(); //padding
-		currentPoint.y += posStart.GetRow()*m_CharSize.GetHeight();
-
-		size_t lineEnd = GetLastDrawingLine();
-
-		for (size_t y = posStart.GetRow(); y < lineEnd; ++y)
-		{			
-			for (size_t col = 0; col < m_Col; ++col)
-			{
-				std::string byteText = Moon::BitConverter::ToHexString(m_Data[offset]);
-				line.append(byteText);
-				line.push_back(' ');
-
-				offset++;
-
-				if (offset == fileSize)
-					break;
-			}
-
-			dc.DrawText(line, currentPoint);
-			currentPoint.y += charHeight;
-
-			if (offset == fileSize)
-				break;
-
-			line.clear();
+		if(y == lineEnd-1)
+		{
+			lineSize = m_LastLineSize;
 		}
-	}
+
+		for (size_t col = 0; col < lineSize; ++col)
+		{
+			std::string byteText = Moon::BitConverter::ToHexString(m_Data[offset]);
+			line.append(byteText);
+			line.push_back(' ');
+
+			offset++;			
+		}
+
+		dc.DrawText(line, currentPoint);
+		currentPoint.y += charHeight;		
+
+		line.clear();
+	}	
 
 	wxPoint p = m_ByteWindowRect.GetTopRight();
 	p.y = 0;
@@ -388,14 +398,13 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	lineText.reserve(m_Col);
 
 	size_t lastLine = GetLastDrawingLine();	
+	size_t lineSize = m_Col;
 
 	for (size_t line = posStart.GetRow(); line < lastLine; ++line)
 	{
-		size_t lineSize = m_Col;
-
-		if ((offset + lineSize) > fileSize)
+		if(line == lastLine-1)
 		{
-			lineSize = fileSize-offset;
+			lineSize = m_LastLineSize;
 		}
 
 		lineText.clear();
@@ -552,7 +561,12 @@ bool wxHexCtrl::CanDrawChar(const char& _c)
 
 size_t wxHexCtrl::GetLastDrawingLine()
 {
-	return m_Rows + GetVisibleRowsBegin();	
+	size_t start = GetVisibleRowsBegin()+1; //One line for the column label
+	size_t end = GetVisibleRowsEnd();
+
+	size_t row_count = std::min(end-start, m_Rows);	
+
+	return row_count + GetVisibleRowsBegin();	
 }
 
 void wxHexCtrl::OnPaintEvent(wxPaintEvent& event)
@@ -601,10 +615,10 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 		if(y == 0)
 			return;				
 
-		y += GetVisibleRowsBegin()-1;
+		if(y >= m_Rows)
+			return;
 
-		if(y > m_Rows)
-			return;		
+		y += GetVisibleRowsBegin()-1;
 
 		InternalSetOffset(x + (y * m_Col));
 
@@ -625,17 +639,17 @@ void wxHexCtrl::OnLeftDown(wxMouseEvent& event)
 		if(x > m_Col)
 			return;
 
-		x--;			
+		x--;		
 		
 		size_t y = (position.y / m_CharSize.y);
 
 		if(y == 0)
 			return;				
 
-		y += GetVisibleRowsBegin()-1;
-
-		if(y > m_Rows)
+		if(y >= m_Rows)
 			return;
+
+		y += GetVisibleRowsBegin()-1;
 
 		InternalSetOffset(x + (y * m_Col));
 
@@ -716,7 +730,13 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 		case wxKeyCode::WXK_UP:			
 			if (m_Offset >= m_Col)
 			{
-				InternalSetOffset(m_Offset - m_Col, true);				
+				uint32_t newOffset = m_Offset - m_Col;
+
+				uint32_t newRow = newOffset / m_Col;
+
+				bool scroll = newRow < GetVisibleRowsBegin();				
+
+				InternalSetOffset(newOffset, scroll);
 			}
 		break;
 		case wxKeyCode::WXK_DOWN:			
