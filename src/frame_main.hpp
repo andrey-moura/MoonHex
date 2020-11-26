@@ -27,21 +27,11 @@ private:
     void OnOpenFile();
     void OnOpenTable();
 public:
-    void OpenFile(const wxString& path);    
-private:
-    wxStaticText* m_pStatusOffsetLabel;
-    wxStaticText* m_pStatusOffset;
-    wxStaticLine* m_pStatusOffsetLine;
-    
-    wxStaticText* m_pStatusValue;
-    wxStaticLine* m_pStatusValueLine;
-
-    void PositionStatusBarItens();
+    void OpenFile(const wxString& path);
 //Events
 private:
     void OnClose(wxCloseEvent& event);
     void OnMenuClick(wxCommandEvent& event);
-    void OnStatusSize(wxSizeEvent& event);
     void OnFileWatcher(wxFileSystemWatcherEvent& event);
 
     void OnOffsetChanged(wxHexEvent& event);

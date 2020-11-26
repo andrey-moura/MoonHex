@@ -34,24 +34,15 @@ void MainFrame::CreateGUIControls()
 	wxBoxSizer* rootSizer = new wxBoxSizer(wxVERTICAL);
 	rootSizer->Add(m_HexView, 1, wxEXPAND, 0);	
 
+	SetStatusBar(CreateStatusBar(2, wxSTB_SHOW_TIPS | wxSTB_ELLIPSIZE_END | wxFULL_REPAINT_ON_RESIZE));	
+
 	int widths[] = { -1 , -1 };
+	int styles[] = { wxSB_RAISED, wxSB_RAISED };
 
-	wxStatusBar* statusBar = CreateStatusBar(2);
-	statusBar->SetStatusWidths(2, widths);
-	statusBar->Bind(wxEVT_SIZE, &MainFrame::OnStatusSize, this);		
-
-	SetStatusBar(statusBar);	
-
-	m_pStatusOffsetLabel = new wxStaticText(statusBar, wxID_ANY, L"Offset: ");
-	m_pStatusOffset = new wxStaticText(statusBar, wxID_ANY, L"00000000");
-	m_pStatusOffsetLine = new wxStaticLine(statusBar, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_VERTICAL);
-	
-	m_pStatusValue = new wxStaticText(statusBar, wxID_ANY, wxEmptyString);
-	m_pStatusValueLine = new wxStaticLine(statusBar, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_VERTICAL);
+	m_frameStatusBar->SetStatusWidths(2, widths);
+	m_frameStatusBar->SetStatusStyles(2, styles);	
 
 	SetSizer(rootSizer);	
-
-	PositionStatusBarItens();
 }
 
 void MainFrame::OnOpenFile()
@@ -112,34 +103,6 @@ void MainFrame::OnGoOffset()
 	}
 }
 
-void MainFrame::PositionStatusBarItens()
-{
-	wxRect rect;
-
-	if (GetStatusBar()->GetFieldRect(0, rect))
-	{		
-		m_pStatusOffsetLabel->SetPosition(rect.GetPosition());
-
-		wxPoint offset_point = { m_pStatusOffsetLabel->GetSize().x + rect.x, rect.y };		
-		m_pStatusOffset->SetPosition(offset_point);
-
-		wxPoint offset_line = offset_point;
-		offset_line.x += m_pStatusOffset->GetSize().x + 4;
-
-		m_pStatusOffsetLine->SetPosition(offset_line);
-	}
-
-	if (GetStatusBar()->GetFieldRect(1, rect))
-	{
-		m_pStatusValue->SetPosition(rect.GetPosition());
-
-		wxPoint position = m_pStatusValue->GetPosition();
-		position.x += m_pStatusValue->GetSize().GetWidth() + 4; //padding
-
-		m_pStatusValueLine->SetPosition(position);
-	}
-}
-
 void MainFrame::OnMenuClick(wxCommandEvent& event)
 {
 	int id = event.GetId();	
@@ -165,19 +128,13 @@ void MainFrame::OnMenuClick(wxCommandEvent& event)
 	event.Skip();
 }
 
-void MainFrame::OnStatusSize(wxSizeEvent& event)
-{
-	PositionStatusBarItens();
-	event.Skip();
-}
-
 void MainFrame::OnOffsetChanged(wxHexEvent& event)
 {
 	uint32_t offset = event.GetOffset();
 	const uint8_t* data = m_HexView->GetData();
 
-	m_pStatusOffset->SetLabelText(Moon::BitConverter::ToHexString(offset));
-	m_pStatusValue->SetLabelText(wxString::Format(L"Value: %s", std::to_string(data[offset])));
+	SetStatusText(wxString::Format(L"Offset: %s", Moon::BitConverter::ToHexString(offset)), 0);
+	SetStatusText(wxString::Format(L"Value: %s", std::to_wstring(data[offset])), 1);
 
 	event.Skip();
 }
