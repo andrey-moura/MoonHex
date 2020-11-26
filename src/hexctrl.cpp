@@ -355,7 +355,7 @@ void wxHexCtrl::DrawBytePage(wxDC& dc)
 
 	for (size_t y = posStart.GetRow(); y < lineEnd; ++y)
 	{
-		if(y == lineEnd-1)
+		if(y == GetRowCount()-2)
 		{
 			lineSize = m_LastLineSize;
 		}
@@ -395,11 +395,12 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	lineText.reserve(m_Col);
 
 	size_t lastLine = GetLastDrawingLine();	
-	size_t lineSize = m_Col;
+	size_t lineSize = m_Col;	
 
 	for (size_t line = posStart.GetRow(); line < lastLine; ++line)
 	{
-		if(line == lastLine-1)
+		//-1 because is 0 based and -1 cause we have one extra line to display column label
+		if(line == GetRowCount()-2)
 		{
 			lineSize = m_LastLineSize;
 		}
@@ -728,19 +729,28 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 			if (m_Offset >= m_Col)
 			{
 				uint32_t newOffset = m_Offset - m_Col;
-
 				uint32_t newRow = newOffset / m_Col;
 
-				bool scroll = newRow < GetVisibleRowsBegin();				
+				bool scroll = newRow < GetVisibleRowsBegin();
 
 				InternalSetOffset(newOffset, scroll);
 			}
 		break;
 		case wxKeyCode::WXK_DOWN:			
 			
-			if (m_Offset + m_Col)
+			if ((m_Offset + m_Col) < m_DataSize)
 			{
-				InternalSetOffset(m_Offset + m_Col, true);
+				uint32_t newOffset = m_Offset + m_Col;
+				uint32_t newRow = newOffset / m_Col;				
+
+				InternalSetOffset(newOffset, false);
+
+				uint32_t lastLine = GetLastDrawingLine();
+
+				if(newRow > lastLine)
+				{
+					ScrollToRow(GetVisibleRowsBegin()+1);
+				}
 			}			
 		break;
 		case wxKeyCode::WXK_TAB:
