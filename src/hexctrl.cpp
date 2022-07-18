@@ -5,7 +5,7 @@ wxDEFINE_EVENT(wxEVT_HEX_OFFSET_CHANGED, wxHexEvent);
 
 wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(parent, id)
 {	
-	wxFontInfo info = wxFontInfo(10).FaceName("Courier New");
+	wxFontInfo info = wxFontInfo(m_FontSize).FaceName("Courier New");
 	wxFontStyle style = info.GetStyle();
 
 	SetFont(info);
@@ -209,17 +209,17 @@ void wxHexCtrl::DrawCols(wxDC& dc)
 	dc.DrawText(label, cur_pos);
 
 	cur_pos.x += label.size()*m_CharSize.GetWidth();
-	cur_pos.x += m_CharSize.GetWidth()*2; //padding
-	cur_pos.x -= 1;	
+	cur_pos.x += m_CharSize.GetWidth() * 3; //padding
 
 	for(uint8_t i = 0; i < m_Col; ++i)
 	{
 		wxPoint p = GetBytePosition(i);
-		cur_pos.x = p.x;
+		// cur_pos.x = p.x;
 
 		std::string hex_str = Moon::BitConverter::ToHexString<uint8_t>(i);
 
 		dc.DrawText(hex_str, cur_pos);
+		cur_pos.x += m_CharSize.GetWidth() * 3;
 	}
 
 	wxString ancii = L"ANSI ASCII";
@@ -360,17 +360,20 @@ void wxHexCtrl::DrawBytePage(wxDC& dc)
 			lineSize = m_LastLineSize;
 		}
 
+		wxPoint cur_pos = m_ColWindowRect.GetPosition();
+		cur_pos.x += m_CharSize.GetWidth () * 11;
+		cur_pos.y += charHeight * (y + 1);
 		for (size_t col = 0; col < lineSize; ++col)
 		{
 			std::string byteText = Moon::BitConverter::ToHexString(m_pData[offset]);
-			line.append(byteText);
-			line.push_back(' ');
-
+			dc.DrawText(byteText, cur_pos);
+			cur_pos.x += m_CharSize.GetWidth() * 3;
 			offset++;			
 		}
 
-		dc.DrawText(line, currentPoint);
+		//dc.DrawText(line, currentPoint);
 		currentPoint.y += charHeight;		
+		cur_pos.y += charHeight;		
 
 		line.clear();
 	}	
@@ -770,7 +773,31 @@ void wxHexCtrl::OnKeyDown(wxKeyEvent& event)
 		break;
 		case wxKeyCode::WXK_PAGEDOWN:
 			InternalSetOffset(m_Offset + m_Rows * m_Col);
-		break;		
+		break;
+		case wxKeyCode::WXK_ESCAPE:
+{
+m_FontSize -= 1;
+	wxFontInfo info = wxFontInfo(m_FontSize).FaceName("Courier New");
+	SetFont(info);
+	m_CharSize = GetTextExtent("A");		
+Fit();
+Layout();
+Refresh(true);
+SendSizeEvent(0);
+}
+		break;
+		case wxKeyCode::WXK_SPACE:
+{
+m_FontSize += 1;
+	wxFontInfo info = wxFontInfo(m_FontSize).FaceName("Courier New");
+	SetFont(info);
+	m_CharSize = GetTextExtent("A");		
+Fit();
+Layout();
+Refresh(true);
+SendSizeEvent(0);
+}
+		break;
 		default:
 			event.Skip();
 		break;
