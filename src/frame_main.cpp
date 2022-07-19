@@ -18,6 +18,17 @@ MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, L"MoonHex", wxDefaultPositio
 	size_t fontSize = config->ReadLong(L"/Preferences/FontPreferences/FontSize", 10);
 
 	SetFontSize(fontSize);
+
+#ifdef _DEBUG
+	std::string test;
+
+	int c = 0;
+	while (c != 256) {
+		test.push_back(c);
+		++c;
+	}
+	Moon::File::WriteAllBytes((std::string)"test.bin", test.c_str(), test.size());
+#endif
 }
 
 void MainFrame::CreateGUIControls()
