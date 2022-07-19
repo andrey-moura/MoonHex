@@ -573,10 +573,8 @@ bool wxHexCtrl::CanDrawChar(const char& _c)
 {
 	uint8_t c = (uint8_t)_c;
 
-	if(c >= 0x20  && c != 0x7F)// &&
-			    //c != 0x81 && c != 0x6F &&
-				//c != 0x90 && c != 0x9C &&
-				//c != 0x9F && c != 0x7F)
+	if(c >= 0x20  && c != 0x81 && c != 0x8d &&
+	   c != 0x90 && c != 0x7F)
 	{
 		return true;
 	}
