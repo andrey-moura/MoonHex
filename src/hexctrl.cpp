@@ -415,7 +415,11 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 	size_t offset = posStart.GetRow() * m_Col;
 
 	size_t charHeight = m_CharSize.GetHeight();
-	wxPoint currentPoint(m_CharWindowRect.x+m_CharSize.GetWidth(), m_CharSize.GetHeight() * posStart.GetRow());
+	size_t charWidth = m_CharSize.GetWidth();
+
+	size_t x_start = m_CharWindowRect.x + m_CharSize.GetWidth();
+
+	wxPoint currentPoint(x_start, m_CharSize.GetHeight() * posStart.GetRow());
 	currentPoint.y += m_CharSize.GetHeight();
 
 	std::string lineText;
@@ -451,9 +455,29 @@ void wxHexCtrl::DrawCharPage(wxDC& dc)
 		
 		offset += m_Col;
 				
-		wxString s(lineText.c_str(), wxCSConv(wxFONTENCODING_CP1252), lineText.size());
+		// Ref: Temporarily drawing character by character because of a bug
+		// This makes cpu usage higher, so need to be solved.
+		// Something is wrong when drawing a set of characters together. Character at 0x98 simply dissapear, leaving the line with -1 offset.
+		
+		//Uncomment after solving the bug:
+		//wxString s(lineText.c_str(), wxCSConv(wxFONTENCODING_CP1252), lineText.size()); 
 
-		dc.DrawText(s, currentPoint);
+		//--To remove start--
+
+		for (const char& c : lineText)
+		{
+			wxString s(&c, wxCSConv(wxFONTENCODING_CP1252), 1);
+			dc.DrawText(s, currentPoint);
+
+			currentPoint.x += charWidth;
+		}
+
+		currentPoint.x = x_start;
+
+		//--To remove end--
+
+		//Uncomment after solving the bug:
+		//dc.DrawText(s, currentPoint);
 		currentPoint.y += charHeight;
 	}
 
