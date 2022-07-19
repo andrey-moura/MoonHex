@@ -4,6 +4,15 @@ wxIMPLEMENT_APP(RomHexEditorApp);
 
 bool RomHexEditorApp::OnInit()
 {	
+	wxFileName fn(wxStandardPaths::Get().GetExecutablePath());
+	fn.SetExt(L"ini");
+
+	wxFileConfig* configs = new wxFileConfig(wxEmptyString, wxEmptyString, fn.GetFullPath());
+	configs->SetRecordDefaults();
+	configs->EnableAutoSave();
+
+	wxConfigBase::Set(configs);
+
 	MainFrame* mainFrame = new MainFrame();	
 	mainFrame->Show();
 

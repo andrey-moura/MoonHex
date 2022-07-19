@@ -55,6 +55,7 @@ SET(SRC
 	src/dialog_search_hex.cpp
 	src/frame_main.cpp
 	src/hexctrl.cpp
+	src/dialog_preferences.cpp
 )
 
 SET(HDR

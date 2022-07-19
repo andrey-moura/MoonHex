@@ -5,10 +5,6 @@ wxDEFINE_EVENT(wxEVT_HEX_OFFSET_CHANGED, wxHexEvent);
 
 wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(parent, id)
 {	
-	wxFontInfo info = wxFontInfo(m_FontSize).FaceName("Courier New");
-	wxFontStyle style = info.GetStyle();
-
-	SetFont(info);
 	SetBackgroundStyle(wxBG_STYLE_PAINT);
 	SetBackgroundColour(wxColor(255, 255, 255, 255));
 
@@ -16,7 +12,8 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	SetDoubleBuffered(true);
 #endif
 
-	CalculateMinSize();
+	SetFontSize(10);
+	
 	m_UpdateSel.Start(600);	
 
 	m_UpdateSel.Bind(wxEVT_TIMER, &wxHexCtrl::OnSelectionTimer, this);
@@ -48,6 +45,19 @@ void wxHexCtrl::SetData(uint8_t* data, const uint32_t& size)
 void wxHexCtrl::SetTable(const Moon::Hacking::Table& table)
 {
 	m_Table = table;
+	Refresh();
+}
+
+void wxHexCtrl::SetFontSize(const size_t& size)
+{
+	wxFontInfo info = wxFontInfo(size).FaceName("Courier New");
+	wxFontStyle style = info.GetStyle();
+
+	SetFont(info);
+
+	m_FontSize = size;
+	CalculateMinSize();
+
 	Refresh();
 }
 

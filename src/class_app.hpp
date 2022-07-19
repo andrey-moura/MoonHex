@@ -1,6 +1,9 @@
 #pragma once
 
 #include <wx/app.h>
+#include <wx/confbase.h>
+#include <wx/fileconf.h>
+#include <wx/stdpaths.h>
 
 #include "frame_main.hpp"
 

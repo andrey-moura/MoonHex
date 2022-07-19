@@ -58,6 +58,8 @@ public:
 	void SetData(uint8_t* data, const uint32_t& size);
 
 	size_t GetPageByteCount() { return m_Col*GetRowCount(); }
+
+	void SetFontSize(const size_t& size);
 private:
 	void InternalSetOffset(uint32_t offset, bool scroll = false);
 private:	

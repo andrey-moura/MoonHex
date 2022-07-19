@@ -3,6 +3,9 @@
 #include <wx/utils.h>
 #include <wx/stdpaths.h>
 
+#include "dialog_preferences.hpp"
+
+
 MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, L"MoonHex", wxDefaultPosition, wxDefaultSize, wxMAXIMIZE | wxDEFAULT_FRAME_STYLE)
 {	
 	CreateGUIControls();
@@ -10,6 +13,11 @@ MainFrame::MainFrame() : wxFrame(nullptr, wxID_ANY, L"MoonHex", wxDefaultPositio
 #ifdef __WXGTK__
 	wxFont::AddPrivateFont(L"Font/Courier New.ttf");
 #endif
+
+	wxConfigBase* config = wxConfigBase::Get();
+	size_t fontSize = config->ReadLong(L"/Preferences/FontPreferences/FontSize", 10);
+
+	SetFontSize(fontSize);
 }
 
 void MainFrame::CreateGUIControls()
@@ -22,9 +30,17 @@ void MainFrame::CreateGUIControls()
 	wxMenu* menuNavigation = new wxMenu();
 	menuNavigation->Append(wxID_INDEX, "Go To Offset...\tCTRL-G");
 
+	wxMenu* menuSettings = new wxMenu();
+
+	Bind(wxEVT_MENU, [this](wxCommandEvent& event) {
+		PreferencesDialog dialog(this);
+		dialog.ShowModal();
+	}, menuSettings->Append(wxID_ANY, L"Preferences")->GetId());
+
 	wxMenuBar* menuBar = new wxMenuBar();
 	menuBar->Append(menuFile, "File");
 	menuBar->Append(menuNavigation, "Navigation");
+	menuBar->Append(menuSettings, "Settings");
 	menuBar->Bind(wxEVT_MENU, &MainFrame::OnMenuClick, this);
 	SetMenuBar(menuBar);
 
@@ -92,6 +108,11 @@ void MainFrame::OpenFile(const wxString& path)
 
 		m_HexView->SetData(data, file.Length());
 	}	
+}
+
+void MainFrame::SetFontSize(const size_t& size)
+{
+	m_HexView->SetFontSize(size);
 }
 
 void MainFrame::OnGoOffset()

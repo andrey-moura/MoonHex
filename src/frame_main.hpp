@@ -28,6 +28,7 @@ private:
     void OnOpenTable();
 public:
     void OpenFile(const wxString& path);
+    void SetFontSize(const size_t& size);
 //Events
 private:
     void OnClose(wxCloseEvent& event);
