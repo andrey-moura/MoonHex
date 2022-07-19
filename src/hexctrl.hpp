@@ -65,6 +65,7 @@ private:
 	uint32_t m_DataSize = 0;
 	size_t m_Col = 16;
 	size_t m_Rows;
+	size_t m_FontSize = 10;
 	//I don't want to calculate this every time
 	size_t m_LastLineSize;
 	wxTimer m_UpdateSel;	
