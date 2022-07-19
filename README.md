@@ -3,7 +3,17 @@
 
 ## Overview
 
-![Main Screen](https://i.imgur.com/Qv7SIpP.png)
+### Appearance under Linux (Ubuntu 18) (Outdated picture)
+![Main Screen Linux](https://i.imgur.com/Qv7SIpP.png)
+### Appearance under Wndows (8.1)
+![Main Screen Windows](https://i.imgur.com/778x62u.png)
+
+### Features
+
+* Table Suppport
+* Offset navigation
+* Font size customization
+* Zoom in/out with mouse wheel
 
 ## Building
 
