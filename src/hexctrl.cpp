@@ -23,6 +23,20 @@ wxHexCtrl::wxHexCtrl(wxWindow* parent, wxWindowID id) : wxHVScrolledWindow(paren
 	Bind(wxEVT_MOTION, &wxHexCtrl::OnMouseMove, this);
 	Bind(wxEVT_KEY_DOWN, &wxHexCtrl::OnKeyDown, this);
 	Bind(wxEVT_CHAR, &wxHexCtrl::OnChar, this);
+
+	Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent& event) {
+		if (event.ControlDown()) {
+			int offset = (event.GetWheelRotation() / event.GetWheelDelta());
+			int newSize = m_FontSize + offset;
+
+			if (newSize > 0) {
+				SetFontSize(newSize);
+			}
+		}
+		else {
+			event.Skip();
+		}
+	});
 }
 
 void wxHexCtrl::SetData(uint8_t* data)
