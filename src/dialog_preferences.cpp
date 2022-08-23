@@ -11,7 +11,7 @@ void PreferencesDialog::CreateGUIControls()
 
 	wxPanel* fontSettingsPanel = new wxPanel(tabControl);
 	m_fontSizeSpin = new wxSpinCtrl(fontSettingsPanel, wxID_ANY);
-	m_fontSizeSpin->SetMin(1);
+	m_fontSizeSpin->SetRange(1, 100);
 	m_fontSizeSpin->SetValue(fontSize);
 
 	wxBoxSizer* fontSizeSizer = new wxBoxSizer(wxHORIZONTAL);
